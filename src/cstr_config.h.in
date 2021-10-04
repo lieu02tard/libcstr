@@ -1,0 +1,2 @@
+#define argparse_version_major @argparse_VERSION_MAJOR@
+#define argparse_version_minor @argparse_VERSION_MINOR@
