@@ -1,126 +1,212 @@
-//This is intended for memory-safe C-style string equivalent for strings.h and string.h
-#ifndef FARGPARSE_CSTR_H
-#define FARGPARSE_CSTR_H
-#include <stdlib.h>
-#include <string.h>
-#include <errno.h>
-#define BUFSIZ 8192
-typedef struct cstrstt
-{
-	char owns;
-	char read;
-	char writes;
-} cstrstt;
-enum CSTR_STATE
-{
-	CSTRSTT_OWN	= 0x01,
-	CSTRSTT_READ	= 0x02,
-	CSTRSTT_WRITE	= 0x04
-};
-typedef struct cstr cstr;
-struct cstr
-{
-	char* 	content;
-	char	state;		//Content ownership of content and permission(write/read-only)
-	cstr* 	base;		//Pointer of cstr object holding real ownership
-	int 	share;		//Number of cstr object are using content. Only base object are required to save this	
-	size_t 	bufmul;		//Number of buffer
-	size_t	relsiz;		//Realsize, aka the size of data before '\0' 
-};
+/* cstr - C string manipulation library
+ * This program/library is part of the FFABC project
+	This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
 
-////CSTR-only function
-//
-//Initialize (or clear)
-int cstrclr(cstr*, size_t initbuf);		//Returning state .
+	This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
 
-//Transfer ownership from SRC to DEST
-//This function will simply nullified DEST and move the ownership of SRC to DEST.
-//SRC still retain 
-char* cowntrans(cstr* DEST, cstr* SRC);
-
-//Grant using permision
-char* cgrperm(cstr* base, cstr* dest, char perm);
-
-//Re-calculate bufmul and relsiz
-int creeval(cstr*);
-
-//Revoke using permissions
-int crevperm(cstr*);
-
-//Soft copy
-//Return soft copy of the original string
-cstr sftcpy(cstr);
-
-////String examination
-//Most of string examination functions are just function in string.h or strings.h with extra step
-////Fork from strings.h
-
-//strings.h not found
-/*
-//Compare ignoring case
-int cstrcasecmp(cstr, cstr);
-
-//Compare to the first n bytes ignoring case
-int cstrncasecmp(cstr, cstr);
-
-//Return a pointer to the first occurance of the character c in string s
-char* cindex(cstr, int);
-
-//Return a pointer to the last occurance of the character c in the string s
-char* crindex(cstr, int);
+	You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*
 */
+/*>>>>>>>>>>>>DEVELOPER MANUAL<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+ * ===================STRUCTURE===========================================
+ * _____________________________________________________
+ * |cstrstt|bufsize    |relsiz     |char[] array
+ * |1 bytes|1-2 byte(s)|2-4 byte(s)|
+ * |_______|___________|___________|___________________
+ * 				   |-> cstr_t variable point here
+ * cstrstt : 
+ * * Bits 6 & 7 store the type of header
+ * * If these bits equal to 0, the string is nullified
+ * bufsize :
+ * * Store the size of buffer block allocated
+ * * aka the real size allocated are BUFSIZ<type> * bufsize * sizeof(char)
+ * relsiz :
+ * * Store the size of character until the '\0' terminator
+ * * This is rather relaxed
+ * ==============================================================EOF======
+ * 
+ *
+ * ==============>>>>>METADATA MANIPULATION FUNCTION<<<<<<<<<<<===========
+ * uint8_t cstrstt(cstr_t)		
+ * 				: Return cstrstt variable
+ * uint8_t cstr_isnull(cstr_t)	
+ * 				: Check if string is NULL, 0-sized
+ * uint8_t* cstr_head(cstr_t)	
+ * 				: Return position of the metadata head
+ * uint8_t* cstr_tail(cstr_t)
+ * 				: Return position of the '\0'
+ * cstr_tt cstrtype(cstr_t)
+ * 				: Type of p
+ * uint16_t cstr_bufsize(cstr_t)
+ * 				: 'bufsize' value
+ * size_t cstr_bufsize_s(cstr_t)
+ * 				: 'bufsize' size
+ * uint32_t cstr_relsiz(cstr_t) 
+ * 				: 'relsiz' value
+ * size_t cstr_relsiz_s(cstr_t) 
+ * 				: 'relsiz' size
+ * size_t cstrdatoff(cstr_t)
+ * 				: cstr data offset (aka size of the header)
+ * size_t cstrdatoff_wn(size_t) 
+ * 				: cstr data offset with given number of characters
+ * header_cnt get_meta(cstr_t)
+ * 				: Get header_cnt-structured metadata
+ * cstr_buffer_size(cstr_t)	
+ * 				: Get buffer size
+ * cstr_buffer_size_wt(cstr_tt) 
+ * 				: Get buffer size for type
+ * cstr_buffer_size_wn(size_t)
+ * 				: Get buffer size with given number of characters
+ * size_t cstrrmn (cstr_t pc)
+ * 				: Get remain block of 'char' unused 
+ * cstr_tt cstr_typewn (size_t nbytes)
+ * 				: Get type with given number of characters
+ * size_t nof_buffer(size_t nbytes)
+ * 				: Get number of buffers for given number of characters
+ * size_t shrink_buf(size_t nbytes)
+ * 				: Get number of character to be allocated to fit the buffer size with given number of characters in use
+ * header_cnt gen_header(size_t nbytes)
+ * 				: Get fresh header created for string of nbytes characters
+ * size_t sizeof_header(header_cnt)
+ * 				: Get size of metadata 
+ * char* cstr_setmeta(header_cnt, cstr_t)
+ * 				: Set metadata for a given string
+ * size_t get_header_inf(header_cnt, HEADER_INFTYPE)
+ * 				: Get information from header struct
+ *
+ *
+ * */
+#ifndef FLIB_CSTR_H
+#define FLIB_CSTR_H
 
-////Fork from string.h
-//Compare strings
-int cstrcmp(cstr, cstr);
+#include <string.h>
 
-#ifdef CSTR_LOCALE
-#include <locale.h>
-//Compare string using current locale
-int cstrcoll(cstr, cstr);
+//Allocate functions
+
+#include <stdlib.h>
+#include <stdint.h>
+#ifdef CSTR_VERBAL
+	#include <stdio.h>
 #endif
 
-//Calculate the length of the initial segment of the string s which doesn't contain any of bytes in the string reject
-size_t cstrcspn(cstr, cstr reject);
+//Buffer
+#ifndef BUFSIZ0
+	#define BUFSIZ0 0x10
+#endif
 
-//Length
-size_t cstrlen(cstr);
+#ifndef BUFSIZ1
+	#define BUFSIZ1 0x400
+#endif
 
-//Compare at most n bytes of strings
-int cstrncmp(cstr, cstr, int);
+#ifndef BUFSIZ2
+	#define BUFSIZ2 0x1000
+#endif
 
-//Return a pointer to the first occurance in the string s of one of the bytes in string accept
-char* cstrpbrk(cstr, cstr accept);
 
-//Extract the initial token in stringp that is delimited by one of the bytes in delim
-char* cstrsep(cstr stringp, cstr delim);
+typedef const char* cstr_t;
 
-//Calculate the length of the starting segment in the string s that consists entirely of bytes in accept
-size_t cstrspn(cstr , cstr accept);
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-//Find the first occurance of substring needle in string haystack, re-turning a pointer to the found substring
-char* cstrstr(cstr haystack, cstr needle);
+typedef uint8_t cstr_s;
+typedef struct
+{
+	cstr_s 	cstrstt;
+	uint8_t	bufsize;
+	uint8_t relsiz;
+} head0;
+#define T0_OFF 	3
+#define T0_MAX	0xFF	//Max type0 capacity, equals 2**8 - 1
 
-//Extract tokens from string s that are delimited by one of the bytes in delim
-char* cstrtok(cstr, cstr delim);
+typedef struct
+{
+	cstr_s 	cstrstt;
+	uint8_t bufsize;
+	uint16_t relsiz;
+} head1;
+#define T1_OFF 4
+#define T1_MAX 0xFFFF	//Max typ1 capacity, equals 2**16 -1
 
-////
-////String manipulation
-////
+typedef struct
+{
+	cstr_s	cstrstt;
+	uint16_t bufsize;
+	uint32_t relsiz;
+} head2;
 
-//Append the string src to string dest, returning a pointer to dest
-cstr cstrcpy(cstr dest, cstr src);
+typedef union
+{
+	head0 h_0;
+	head1 h_1;
+	head2 h_2;
+} header_cnt;
 
-//Return a deplicate of string s in memory allocated using malloc(3)
-cstr cstrdup(cstr);
+typedef enum {
+	CSTR_TYPE0	= 0x01,
+	CSTR_TYPE1	= 0x02,
+	CSTR_TYPE2	= 0x03
+} cstr_tt;
+//Generate
 
-//Randomly swap the characters in string
-//strfry currently not available
-//cstr cstrfry(cstr string);
+cstr_t 	ncstrnew (size_t);
+cstr_t 	ncstrdup (const char*);
+cstr_t 	ncstrcdup (cstr_t);
 
-//Append at the most n bytes for string src to string dest, returning a pointer to dest
-cstr cstrncat(cstr dest, cstr src, size_t n);
+//Manipulation
+//
+//Append
+char*	cstrcpy (cstr_t* dest, cstr_t src);
+char* 	cstrgcpy (cstr_t* dest, const char* src);
 
-#define MAXS(a, b) (a > b) ? a : b
+char* 	cstrncpy (cstr_t* dest, cstr_t src, size_t nbytes);
+char* 	cstrngcpy (cstr_t* dest, const char* src, size_t nbytes);
+
+char*	cstrcat (cstr_t* dest, cstr_t src);
+char*	cstrgcat (cstr_t* dest, const char* src);
+
+char*	cstrncat (cstr_t* dest, cstr_t src, size_t nbytes);
+char* 	cstrngcat (cstr_t* dest, const char* src, size_t nbytes);
+
+
+void	cstreval (cstr_t);
+
+//Free
+cstr_t	cstrfree (cstr_t);
+
+//Examination
+//
+//Assess
+size_t 	cstrbuf (cstr_t);	//Buffer in state
+size_t	cstrlen (cstr_t);	//Length in use by string
+size_t	cstrrmn (cstr_t);	//Remain size
+/*
+int 	cstrcasecmp (cstr_t, cstr_t);		//Compare ignoring case
+int 	cstrncasecmp (cstr_t, cstr_t, size_t);	//Compare by certain number of characters ignoring case
+char* 	index (cstr_t s, char c);		//Return a pointer to the first occurance of character c in string s
+char* 	rindex (cstr_t s, char c);		//Return a pointer to the last occurance of character c in string s
+*/
+/*
+int 	cstrcmp (cstr_t, cstr_t);		//Compare
+int 	cstrncmpr (cstr_t, cstr_t, int);	//Compare by certain number of characters
+size_t	cstrcspn (cstr_t s, cstr_t reject);	//Calculate the length of initial segement in string s which does not contain any of bytes in the string reject
+
+//Token related
+char* 	cstrstr (cstr_t haystack, cstr_t needle);
+char* 	cstrgstr (cstr_t haystack, const char * needle);
+
+char* 	cstrtok (cstr_t s, cstr_t delim);
+char* 	cstrgtok (cstr_t s, const char* delim);
+*/
+#ifdef __cplusplus
+}
+#endif
 
 #endif

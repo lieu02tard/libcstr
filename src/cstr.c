@@ -1,240 +1,427 @@
 #include "cstr.h"
-cstrstt creadstt(char state)
+#ifndef CSTR_FILEDEF
+	#define CSTR_FILEDEF stderr
+#endif
+
+void cstr_err(const char* pc)
 {
-	return (cstrstt) {state & 0x01, (state & 0x03) >> 1, (state & 0x07) >> 2};
+#ifdef CSTR_VERBAL
+	fprintf(CSTR_FILEDEF, "%s\n", pc);
+	return;
+#else
+	return ;
+#endif
 }
-char cwristt(cstrstt _state)
+
+//Metadata-related macro
+//#define are avoid at all cost with 'inline' function
+static inline uint8_t cstrstt(cstr_t p)		//cstr_stt variable
+{	return (p == NULL) ? 0 : *((uint8_t*)(p) - 1);}
+static inline cstr_tt cstrtype(cstr_t p)
+{	return (p == NULL) ? NULL : (*((uint8_t*)(p)) & 0x02) >> 2;}
+static inline uint8_t* cstr_head(cstr_t p)	//Head position of metadata
+{	return (p == NULL) ? NULL : (uint8_t*)(p) - cstr_dataoff(cstrtype(p));}
+#define UINTB_TYPE (p) (cstrtype(p) == 3) ? uint16_t : uint8_t //bufsize type of p
+#define UINT_TYPE (p) (cstrtype(p) == 1) ? uint8_t : (cstrtype(p) == 2) ? uint16_t : uint32_t	//relsiz type of p
+
+static inline uint16_t cstr_bufsize(cstr_t p)	//'bufsize' value of p
+{ 	return (p == NULL) ? 0 : (uint16_t) *((uint8_t*)(p) + 1);}
+static inline size_t cstr_bufsize_s (cstr_t p)	//Size of p->bufsiz variable
+{	return (p == NULL) ? 0 : (cstrtype(p) == 3) ? 2 : 1;}
+static inline uint32_t cstr_relsiz(cstr_t p);	//'relsiz' value of p
+static inline size_t cstr_relsiz_s(cstr_t p);
+static inline size_t cstrdatoff (void* p)	//Data offset of p
+{	return (cstrtype(p) == CSTR_TYPE0) ? T0_OFF : (cstrtype(p) == CSTR_TYPE1) ? T1_OFF : T2_OFF;}
+static inline size_t cstrdatoff (char _type)
+{	return (_type == CSTR_TYPE0) ? T0_OFF : (_type == CSTR_TYPE1) ? T1_OFF : T2_OFF;}
+static inline size_t cstrdatbuf (char _type)
+{	return (_type == CSTR_TYPE0) ? T0_OFF : (_type == CSTR_TYPE1) ? T1_OFF : (_type == CSTR_TYPE2) ? T2_OFF : -1;}
+static inline size_t cstrdatbuf (cstr p)
+{	return cstrdatbuf(cstrtype(p));}
+
+#define HEADER_TYPE (cstrtype(p) == CSTRTYPE0) ? head0 : (cstrtype(p) == CSTRTYPE1) ? head1 : head2
+static inline header_cnt get_meta (cstr p)
 {
-	return _state.owns + _state.read * 0x02 + _state.writes * 0x04;
-}
-int cstrclr(cstr* _s, size_t initbuf)
-{
-	cstrstt _state = creadstt(_s->state);
-	if (_state.owns == 1)	//Owner of content
+	//char _ptype = cstrtype(p);
+	header_cnt _return = (header_cnt){
+		.h_0 = (head0){0, 0, 0},
+		.h_1 = (head1){0, 0, 0},
+		.h_2 = (head2){0, 0, 0}};
+	char _ptype;
+	if (p == NULL)
+		return _return;
+	else
+		_ptype = cstrtype(p);
+	switch (_ptype)
 	{
-		if (_s->share != 0)
-			return -2;	//UNFREEABLE
-		else
-		{
-			free(_s->content);
-			_s->bufmul	= 0;
-			_s->relsiz	= 0;
-			_s->state	= 0;
-			_s->share	= 0;
-			_s->base	= NULL;
-		}
+		case CSTRTYPE0:
+			_return.h_1 = (head1) {cstrstt(p), cstr_bufsize(p), cstr_relsiz(p)};
+			break;
+		case CSTRTYPE1:
+			_return.h_2 = (head2) {cstrstt(p), cstr_bufsize(p), cstr_relsiz(p)};
+			break;
+		case CSTRTYPE2:
+			_return.h_3 = (head3) {cstrstt(p), cstr_bufsize(p), cstr_relsiz(p)};
+			break;
+	}
+	return _return;
+	//return (HEADER_TYPE) {CSTT(p), CBUFSIZE(p), CRELSIZ(p)};
+}
+//Assess function
+size_t cstrbuf (cstr_t pc)
+{	return cstr_bufsize(pc);}
+size_t cstrlen (cstr_t pc)
+{	return cstr_relsiz(pc);}
+static inline size_t cstr_buffer_size_wt(cstr_tt type)
+{	return (type == 1) ? BUFSIZ0 : (type == 2) ? BUFSIZ1 : BUFSIZ2;}
+//#define BUFFSIZ (p) BUFFSIZT(CSTRTYPE(p))
+static inline stize_t cstr_buffer_size(cstr p)
+{	return cstr_buffer_size_wt(cstrtype(p));}
+size_t cstrrmn (cstr_t pc)
+{
+	return CBUFSIZ * BUFFSIZ(pc) - CRELSIZ(p);
+}
+static inline size_t cstr_datoff(char type)
+{	return (type == 1) ? T0_OFF : (type == 2) ? T1_OFF : T2_OFF;}
+
+static inline cstr_tt cstr_typewn(int nbytes)
+{	return  (nbytes <= T0_MAX) ? CSTR_TYPE0 : (nbytes <= T1_MAX) ? CSTR_TYPE1 : (nbytes <= T2_MAX) ? CSTR_TYPE3 : 0;}
+static inline size_t cstr_datoff_wn(size_t nbytes)
+{	return cstr_datoff(cstr_typewn(nbytes));}
+static inline size_t nof_buffer(size_t nbytes)
+{	
+	char _type = cstr_typewn(nbytes);
+	return (int)((nbytes + cstr_datoff(_type)) / cstr_datbuf(_type)) + 1;
+}
+static inline size_t shrink_buf(size_t nbytes)
+{
+	char _type = cstr_typewn (nbytes);
+	return ((size_t) ((bytes + cstr_datoff(_type)) / cstr_datbuf(_type)) + 1 ) * cstr_datbuf(_type);
+}
+static head_cnt gen_header(size_t nbytes)
+{	
+	char _ptype = cstr_typewn(nbytes);
+	header_cnt _return = (header_cnt){
+		._h0 = (head0){0, 0, 0},
+		._h1 = (head1){0, 0, 0},
+		._h2 = (head2){0, 0, 0} };
+	switch (_ptype)
+	{
+		case CSTR_TYPE0:
+			_return._h0 = (head0){	_ptype, 
+						nof_buffer(nbyets),
+						0 };
+			break;
+		case CSTR_TYPE1:
+			_return._h1 = (head1){ 	_ptype,
+						nof_buffer(nbytes),
+						0 };
+			break;
+		case CSTR_TYPE2:
+			_return._h2 = (head2){ 	_ptype,
+						nof_buffer(nbytes),
+						0 };
+			break;
+	}
+	return _return;
+}
+//[FIXME]
+static inline size_t sizeof_header(head_cnt);
+//[FIXME]
+static void cstr_setmeta (head_cnt _header, cstr p)
+{
+	uint8_t _head 	= (uint8_t*)(p) - sizeof_header(_header);
+}
+
+cstr_t	ncstrnew(size_t nbytes)
+{
+	//head_cnt _gened_header = gen_header(nbytes);
+	char _type = cstr_typewn(nbytes);
+	size_t _nofBlk = sizeof(char)  * shrink_buf(nbytes);
+	char* _return	= (char*) malloc(_nofBlk);
+	if (NULL != _return)
+	{
+		head_cnt _gened_header = gen_header(nbytes);
+		memset(_return, _nofBlk, '\0');
+		cstr_setmeta(_gened_header, (_return + cstr_datoff_wn(nbytes)));
+		return (_return  + cstr_datoff_wn(nbytes));
 	}
 	else
 	{
-		crevperm(_s->base);
-		_s->content	= NULL;
-		_s->state	= 0;
-		_s->share 	= 0;
-		_s->bufmul	= 0;
-		_s->relsiz	= 0;
-		_s->base	= NULL;
+		cstr_err("Allocation failed");
+		return NULL;
 	}
-	if (initbuf > 0)
+}
+
+cstr_t ncstrdup (const char* cc)
+{
+	//char* _return 	= (char*) malloc(sizeof(char) * (nbytes + DATAOFF(nbytes)));
+	//if (NULL == _return)
+	//	ERR(0);
+	size_t nlen	= strlen(cc);
+	char _type	= cstr_typewn(nlen);
+	size_t _nofBlk	= sizeof(char) * shrink_buf(nlen);
+	char* _return  	= (char*)malloc(sizeof(char) * shrink_buf(nlen));
+	if (NULL != _return)
 	{
-		_s->content 	= (char*) malloc(sizeof(char) * BUFSIZ * initbuf);
-		if (_s->content == NULL)
-			return -3;
-		_s->base	= _s;
-		_s->state	= CSTRSTT_OWN | CSTRSTT_READ | CSTRSTT_WRITE;
-		_s->share	= 1;
-		_s->bufmul	= initbuf;
-		_s->relsiz	= 0;
+		head_cnt _gened_header 	= gen_header(nlen);
+		memset(_return, _nofBlk, '\0');
+		cstr_setmeta(_gened_header, (_return + cstr_datoff_wn(nlen)));
+		return (_return + cstr_dataoff_wn(nlen));
 	}
+	else
+	{
+		cstr_err("Allocation failed");
+		return NULL;
+	}
+}
+
+cstr_t ncstrcdup(cstr_t pc)
+{
+	cstr_reeval(pc);
+	head_cnt _cpy_header 	= get_meta(pc);
+	size_t relsiz		= get_header_inf(_cpy_header, METADATA_RELSIZ);
+	size_t bufsize		= get_header_inf(_cpy_header, METADATA_BUFSIZE);
+	char* _return		= (char*) malloc(sizeof(char) * shrink_buf(nlen));
+
+	if (NULL != _return)
+	{
+		memset(_return, sizeof(char) * relsiz, '\0');
+		cstr_setmeta(_cpy_header, (_return + cstr_datoff_wn(relsiz)));
+		return (_return + cstr_datoff_wn(relsiz));
+	}
+	else
+	{
+		cstr_err("Allocation failed");
+		return NULL;
+	}
+}
+//This completely overwrite pc's metadata and thus costly to call
+uint8_t cstr_reeval(cstr_t pc)	//Re-evaluate 'relsiz' and 'bufsize' variable 
+	__attribute__((warn_unused_result)) //The result must be used because
+					    //function is not guaranteed to be always correct
+{
+	if (NULL == pc)
+		return -1;
+
+	//*insert heap memory checking function*
+#ifdef CSTR_MEMCHECK
+
+#endif
+	/*
+	size_t relsiz 	= strlen(pc);
+	size_t bufsize	= shrink_buf(relsiz);
+	*/
+	head_cnt _cpy_header 	= gen_header(strlen(pc));
+	cstr_setmeta(_cpy_header, pc);
+	return 0;
+}
+//Notice that a string freed will have NULL value
+//It is difference from a string with 0 characters and a minimum header
+cstr_t cstrfree(cstr_t* pc)
+//	__attribute__((warn_unused_result))
+{
+	if (NULL == *pc)
+		return NULL;
+	free(cstr_head(*pc));
+	*pc = NULL;
+	return *pc;
+}
+
+//String manipulation function
+
+//Copy src to dest
+//Clear all existing memory
+//And allocate new memory sufficent for new copied memory
+char* cstrcpy(cstr_t* dest, cstr_t src)
+{
+	cstr_reeval(src);
+	//cstr_t* since the real 'cstr_t' value will be realloc()
+	head_cnt _src_header 	= get_meta(src);
+	size_t _block_size	= cstr_buffer_size_wt(get_header_inf(_src_header, HEADER_TYPE));
+	size_t bufsize		= get_header_inf(_src_header, HEADER_BUFSIZE);
+	size_t relsiz		= get_header_inf(_src_header, HEADER_RELSIZ);
+	uint64_t nofBlk		= bufsize * _block_size * sizeof(char);
+	char* _alloc		= (char*) realloc(cstr_head(*dest), nofBlk);
+	if (NULL == _alloc)
+	{
+		cstr_err("Allocate error");
+		return NULL;
+	}
+	*dest 			= _alloc + cstr_datoff(relsiz);
+	memset(_alloc, nofBlk, '\0');
+	set_meta(gen_header(relsiz), *dest);
+	memcpy(src, *dest, relsiz * sizeof(char));	//sizeof(char) is rather useless since it is defined by the C standard to be 1 (byte). It just serve coding conventioning purposes
+	return *dest;
+}
+
+char* cstrgcpy(cstr_t* dest, const char* src)
+{
+	int relsiz		= strlen(src);
+	//size_t _block_size	= cstr_buffer_size_wn(relsiz);
+	size_t nofBlk		= shrink_buf(relsiz);
 	
-}
-
-
-char* cowntrans(cstr* DEST, cstr* SRC)
-{
-	creeval(SRC);
-	cstrclr(DEST, 0);
-	DEST->content 	= SRC->content;
-	DEST->state 	= CSTRSTT_OWN | CSTRSTT_READ | CSTRSTT_WRITE;
-	DEST->base 	= DEST;
-	DEST->share	= SRC->share;
-	DEST->bufmul	= SRC->bufmul;
-	DEST->relsiz	= SRC->relsiz;
-
-	SRC->state	= CSTRSTT_READ | CSTRSTT_WRITE;
-	SRC->base	= DEST;
-	SRC->share	= 0;
-	return DEST->content;
-}
-
-char* cgrperm(cstr* base, cstr* dest, char perm)
-{
-	creeval(base);
-	cstrclr(dest, 0);
-	dest->content	= base->content;
-	dest->state	= perm & 0x03;	//Clear ownership (if exist) from perm
-	dest->base	= base;
-	dest->share	= 0;
-	dest->bufmul 	= base->bufmul;
-	dest->relsiz	= base->relsiz;
-}
-
-int creeval(cstr* _obj)
-{
-	if (_obj == NULL)
-		return -1;
-	if (_obj->content == NULL)
+	char* _alloc		= (char*) realloc(cstr_head(*dest), nofBlk);
+	if (NULL == _alloc)
 	{
-		_obj->state	= 0;
-		_obj->base	= NULL;
-		_obj->share	= 0;
-		_obj->bufmul	= 0;
-		_obj->relsiz	= 0;
-		return 0;
+		cstr_err("Allocate error");
+		return NULL;
 	}
-	if (_obj->state & 0x04) 	//If 3rd bit is 1
+
+	*dest			= _alloc + cstr_datoff(relsiz);
+	memset(_alloc, nofBlk, '\0');
+	set_meta(gen_header(relsiz), *dest);
+	memcpy(src, *dest, relsiz * sizeof(char));
+
+	return *dest;
+}
+
+char* cstrncpy(cstr_t * dest, cstr_t src, size_t nbytes)
+{
+	cstr_reeval(src);
+	size_t nbytes_eff	= nbytes;
+	size_t relsiz		= cstr_relsiz(src);
+	if (relsiz < nbytes)
 	{
-		_obj->base	= _obj;
-		_obj->relsiz	= strlen(_obj->content);
-		_obj->bufmul	= (size_t)(_obj->relsiz / BUFSIZ) + 1;
-		char* _temp;
-		if ((_temp = realloc(_obj->content, sizeof(char) * BUFSIZ * _obj->bufmul)) != NULL)
-		{
-			_obj->content = _temp;
-			return 0;
-		}
-		else
-			return -1;
+		cstr_err("Error: cstrncpy() out of source's range");
+		nbytes_eff = relsiz;
 	}
-	else
+
+	//size_t _block_size	= cstr_buffer_size_wn(nbytes_eff);
+	size_t nofBlk		= shrink_buf(nbytes_eff);
+
+	char* _alloc		= (char*) realloc(cstr_head(*dest), nofBlk);
+	if (NULL == _alloc)
 	{
-		creeval(_obj->base);
-		_obj->bufmul 	= _obj->base->bufmul;
-		_obj->relsiz	= _obj->base->relsiz;
+		cstr_err("Allocate error");
+		return NULL;
 	}
+
+	*dest			= _alloc + cstr_datoff(nbytes_eff);
+	memset(_alloc, nofBlk, '\0');
+	set_meta(gen_header(nbytes_eff), *dest);
+	memcpy(src, *dest, nbytes_eff * sizeof(char));
+
+	return *dest;
 }
 
-int crevperm(cstr* _obj)
+char* cstrngcpy(cstr_t* dest, const char* src, size_t nbytes)
 {
-	if (_obj == NULL)
-		return -1;
-	if (_obj->state & 0x04)
-		return 0;
-	creeval(_obj);
-	_obj->state	= 0;
-}
+	size_t nbytes_eff	= nbytes;
+	size_t relsiz		= strlen(src);
 
-/*int cstrcasecmp(cstr _s0, cstr _s1)
-{
-	return cstrcasecmp(_s0->content, _s1->content);
-}*/
-
-/*int cstrncasecmp(cstr _s0, cstr _s1, int nbytes)
-{
-	return strncasecmp(_s0->content, _s1->content, nbytes);
-}*/
-
-/*char* cindex(cstr s, int c)
-{
-	return index(s->content, c);
-}*/
-
-/*char* crindex(cstr s, int c)
-{
-	return rindex(s->content, c);
-}*/
-
-int cstrcmp(cstr _s0, cstr _s1)
-{
-	return strcmp(_s0.content, _s1.content);
-}
-
-int cstrcoll(cstr _s0, cstr _s1)
-{
-	return strcoll(_s0.content, _s1.content);
-}
-
-size_t cstrcspn(cstr _obj, cstr reject)
-{
-	return strcspn(_obj.content, reject.content);
-}
-
-size_t cstrlen(cstr _obj)
-{
-	creeval(&_obj);
-	return _obj.relsiz;
-}
-
-int cstrncmp(cstr _s0, cstr _s1, int nbytes)
-{
-	return strncmp(_s0.content, _s1.content, nbytes);
-}
-
-char* cstrpbrk(cstr _obj, cstr accept)
-{
-	return strpbrk(_obj.content, accept.content);
-}
-
-char* cstrsep(cstr stringp, cstr delim)
-{
-	return strsep(&(stringp.content), delim.content);
-}
-
-size_t cstrspn(cstr _obj, cstr accept)
-{
-	return strspn(_obj.content, accept.content);
-}
-
-char* cstrstr(cstr haystack, cstr needle)
-{
-	return strstr(haystack.content, needle.content);
-}
-
-char* cstrtok(cstr _obj, cstr delim)
-{
-	return strtok(_obj.content, delim.content);
-}
-
-////String manipulation
-cstr cstrcpy(cstr dest, cstr src)
-{
-	int fnsiz	= dest.relsiz + src.relsiz;
-	int fnbuf	= (int) ((fnsiz + 1) / BUFSIZ) + 1;
-	char* bufp	 =(char*) realloc(dest.content, fnbuf * BUFSIZ * sizeof(char));
-	if (bufp == NULL)
+	if (relsiz < nbytes)
 	{
-		errno = -1;
-		return dest;
+		cstr_err("Error: cstrngcpy() out of source's range");
+		nbytes_eff	= relsiz;
 	}
-	memcpy(dest.content + (dest.relsiz) * sizeof(char), src.content, src.relsiz * sizeof(char));
-	return dest;
-}
 
-cstr cstrdup(cstr src)
-{
-	cstr _ret = {NULL, 0, NULL, 0, 0, 0};
-	char* _retcon = (char*) malloc(src.bufmul * sizeof(char));
-	if (_retcon == NULL)
-		return _ret;
-	memcpy(_retcon, src.content, src.bufmul * BUFSIZ * sizeof(char));
-	return (cstr) {_retcon, CSTRSTT_OWN | CSTRSTT_READ | CSTRSTT_WRITE, NULL, 1, src.bufmul, src.relsiz};
-}
-//strfry currently not available
-/*
-cstr cstrfry(cstr string)
-{
-	strfry(string.content);
-	return string;
-}*/
-
-cstr cstrncat(cstr dest, cstr src, size_t n)
-{
-	int fnsiz	= dest.relsiz + MAXS(src.relsiz, n);
-	int fnbuf	= (int) ((fnsiz + 1) / BUFSIZ) + 1;
-	char* bufp	= (char*) realloc(dest.content, fnbuf * BUFSIZ * sizeof(char));
-	if (bufp == NULL)
+	size_t nofBlk		= shrink_buf(nbytes_eff);
+	char* _alloc		= (char*) realloc(cstr_head(*dest), nofBlk);
+	if (NULL == _alloc)
 	{
-		errno = -1;
-		return dest;
+		cstr_err("Allocate error");
+		return NULL;
 	}
-	memcpy(dest.content + (dest.relsiz) * sizeof(char), src.content, MAXS(src.relsiz, n) * sizeof(char));
+
+	*dest			= _alloc + cstr_datoff(nbytes_eff);
+	memset(_alloc, nofBlk, '\0');
+	set_meta(gen_header(nbytes_eff), *dest);
+	memcpy(src, *dest, nbytes_eff * sizeof(char));
+
+	return *dest;
+}
+
+char* cstrcat(cstr_t* dest, cstr_t src)
+{
+	cstr_reeval(src);
+	cstr_reeval(*dest);
+	size_t _src_relsiz 	= cstr_relsiz(src);
+	size_t _dest_relsiz	= cstr_relsiz(*dest);
+	size_t _final_relsiz	= _src_relsiz + _dest_relsiz;
+
+	size_t nofBlk		= shrink_buf(_final_relsiz);
+	char* _alloc		= (char*) realloc(cstr_head(*dest), nofBlk);
+	if (NULL == _alloc)
+	{
+		cstr_err("Allocate error");
+		return NULL;
+	}
+
+	*dest			= _alloc + cstr_datoff(_final_relsiz);
+	memcpy(src, *dest + _dest_relsiz * sizeof(char), _src_relsiz * sizeof(char) + 1); //The '+1' part is compensate for the '\0'
+	set_meta(gen_header(_final_relsiz), *dest);
+
+	return *dest;
+}
+
+char* cstrgcat(cstr_t* dest, const char* src)
+{
+	cstr_reeval(*dest);
+	size_t _src_relsiz	= strlen(src);
+	size_t _dest_relsiz	= cstr_relsiz(*dest);
+	size_t _final_relsiz	= _src_relsiz + _dest_relsiz;
+
+	size_t nofBlk		= shrink_buf(_final_relsiz);
+	char* _alloc		= (char*) realloc(cstr_head(*dest), nofBlk);
+	if (NULL == _alloc)
+	{
+		cstr_err("Allocate error");
+		return NULL;
+	}
+
+	*dest			= _alloc + cstr_datoff(_final_relsiz);
+	memcpy(src, *dest + _dest_relsiz * sizeof(char), _src_relsiz * sizeof(char) + 1);
+	set_meta(gen_header(_final_relsiz), *dest);
+
+	return *dest;
+}
+
+char* cstrncat(cstr_t* dest, cstr_t src, size_t nbytes)
+{
+	cstr_reeval(*dest);
+	cstr_reeval(src);
+	size_t _src_relsiz 	= cstr_relsiz(src);
+	size_t _dest_relsiz	= cstr_relsiz(*dest);
+	if (nbytes < _src_relsiz)
+		_src_relsiz = nbytes;
+	size_t _final_relsiz	= _src_relsiz + _dest_relsiz;
+
+	size_t nofBlk		= shrink_buf(_final_relsiz);
+	char* _alloc		= (char*) realloc(cstr_head(*dest), nofBlk);
+	if (NULL == _alloc)
+	{
+		cstr_err("Allocate error");
+		return NULL;
+	}
+
+	*dest			= _alloc + cstr_datoff(_final_relsiz);
+	memcpy(src, *dest + _dest_relsiz * sizeof(char), _src_relsiz * sizeof(char) + 1);
+	set_meta(gen_header(_final_relsiz), *dest);
+
+	return *dest;
+}
+
+char* cstrngcat(cstr_t* dest, const char* src, size_t nbytes)
+{
+	cstr_reeval(*dest);
+	size_t _src_relsiz	= strlen(src);
+	size_t _dest_relsiz	= cstr_relsiz(*dest);
+	if (nbytes < _src_relsiz)
+		_src_relsiz = nbytes;
+	size_t _final_relsiz	= _src_relsiz + _dest_relsiz;
+
+	size_t nofBlk 		= shrink_buf(_final_relsiz);
+	char* _alloc		= (char*) realloc(cstr_head(*dest), nofBlk);
+	if (NULL == _alloc)
+	{
+		cstr_err("Allocate error");
+		return NULL;
+	}
+
+	*dest			= _alloc + cstr_datoff(_final_relsiz);
+	memcpy(src, *dest + _dest_relsiz * sizeof(char), _src_relsiz * sizeof(char) + 1);
+	set_meta(gen_header(_final_relsiz), *dest);
+
+	return *dest;
 }
