@@ -86,62 +86,60 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef FLIB_CSTR_H
 #define FLIB_CSTR_H
 
+#include "cstr_cfg.h"
 #include <string.h>
-
-//Allocate functions
-
-#include <stdlib.h>
 #include <stdint.h>
 #ifdef CSTR_VERBAL
 	#include <stdio.h>
-#endif
+#endif /*CSTR_VERBAL*/
 
-//Buffer
-#ifndef BUFSIZ0
-	#define BUFSIZ0 0x10
-#endif
+#ifdef CSTR_SECURITY_WIPE
+    #define CSTR_ZERO_STRING
+#endif /* not CSTR_SECURITY_WIPE*/
 
-#ifndef BUFSIZ1
-	#define BUFSIZ1 0x400
-#endif
-
-#ifndef BUFSIZ2
-	#define BUFSIZ2 0x1000
-#endif
-
-
-typedef const char* cstr_t;
+typedef char* cstr_t;
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 typedef uint8_t cstr_s;
+
 typedef struct
 {
-	cstr_s 	cstrstt;
 	uint8_t	bufsize;
 	uint8_t relsiz;
+    cstr_s cstrstt;
 } head0;
-#define T0_OFF 	3
+//#define T0_OFF 	3
 #define T0_MAX	0xFF	//Max type0 capacity, equals 2**8 - 1
+#ifndef T0_BUFFER
+    #define T0_BUFFER 0x10
+#endif
 
 typedef struct
 {
-	cstr_s 	cstrstt;
 	uint8_t bufsize;
 	uint16_t relsiz;
+    cstr_s cstrstt;
 } head1;
-#define T1_OFF 4
-#define T1_MAX 0xFFFF	//Max typ1 capacity, equals 2**16 -1
+//#define T1_OFF 4
+#define T1_MAX 0xFF	//Max typ1 capacity, equals 2**16 -1
+#ifndef T1_BUFFER 
+    #define T1_BUFFER 0x400
+#endif
 
 typedef struct
 {
-	cstr_s	cstrstt;
 	uint16_t bufsize;
 	uint32_t relsiz;
+    cstr_s cstrstt;
 } head2;
-
+//#define T2_OFF 7
+#define T2_MAX 0xFFFFFFFF      //Max typ2 capacity, equals 2**32 -1
+#ifndef T2_BUFFER
+    #define T2_BUFFER 0x1000
+#endif
 typedef union
 {
 	head0 h_0;
@@ -155,11 +153,11 @@ typedef enum {
 	CSTR_TYPE2	= 0x03
 } cstr_tt;
 //Generate
-
+cstr_t	ncstrmt();
 cstr_t 	ncstrnew (size_t);
 cstr_t 	ncstrdup (const char*);
 cstr_t 	ncstrcdup (cstr_t);
-
+cstr_t	nfcstrdup(const char*, ...);
 //Manipulation
 //
 //Append
@@ -176,7 +174,7 @@ char*	cstrncat (cstr_t* dest, cstr_t src, size_t nbytes);
 char* 	cstrngcat (cstr_t* dest, const char* src, size_t nbytes);
 
 
-void	cstreval (cstr_t);
+void	cst_reeval (cstr_t);
 
 //Free
 cstr_t	cstrfree (cstr_t);

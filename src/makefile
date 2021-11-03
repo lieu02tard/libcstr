@@ -8,14 +8,14 @@ TARGET	:=main
 APP_DIR	:=.
 DEB_DIR	:=$(BUILD)/debug
 OBJ_DIR	:=$(BUILD)/obj
-INC		:=-I . -I ~/lib
+INC		:=-I .
 SRC_DIR	:=.
-SRC		:=$(wildcard ./*.cpp)
+SRC		:=$(wildcard ./*.c)
 OBJ		:=$(SRC:%.cpp=$(OBJ_DIR)/%.o)
 EX 		:=./ex_obj
 all: build $(APP_DIR)/$(TARGET)
 
-$(OBJ_DIR)/%.o: %.cpp
+$(OBJ_DIR)/%.o: %.c
 		@mkdir -p $(@D)
 		$(CCX) $(NFLAGS) $(INC) $(CCFLAGS) $< $(OFLAGS) $@
 
