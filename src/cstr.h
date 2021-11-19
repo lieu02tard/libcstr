@@ -203,9 +203,6 @@ char* 	cstrgstr (cstr_t haystack, const char * needle);
 char* 	cstrtok (cstr_t s, cstr_t delim);
 char* 	cstrgtok (cstr_t s, const char* delim);
 */
-void do_nothing()
-{
-}
 #ifdef __cplusplus
 }
 #endif

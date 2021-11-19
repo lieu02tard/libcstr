@@ -1,4 +1,5 @@
 #include "cstr.h"
+#include <stdlib.h>
 //----------Macro---------------------
 #define CSTR_TYPE_0 1
 #define CSTR_TYPE_1 2
@@ -14,6 +15,18 @@
 #define UINT_TYPE (p) (cstrtype(p) == 1) ? uint8_t : (cstrtype(p) == 2) ? uint16_t : uint32_t	//relsiz type of p
 #define CSTR_HEAD(T, s) ((head##T*) (s - sizeof(head##T)))
 #define CSTR_HEAD_TYPE(T) head##T
+#ifndef cstr_malloc
+	#define cstr_malloc malloc
+#endif
+#ifndef cstr_calloc
+	#define cstr_calloc calloc
+#endif
+#ifndef cstr_free
+	#define cstr_free free
+#endif
+#ifndef cstr_realloc
+	#define cstr_realloc realloc
+#endif
 //----------Type definition
 typedef enum 
  {
@@ -70,6 +83,7 @@ static inline size_t shrink_buf(size_t);
 static header_cnt gen_header(size_t);
 static inline size_t sizeof_header(header_cnt);
 static int cstr_setmeta_t(cstr_t, size_t, HEADER_META);
+static int get_header_inf(header_cnt, HEADER_META);
 static inline int cstr_setmeta_bufsize(cstr_t, size_t);
 static inline int cstr_setmeta_relsiz(cstr_t, size_t);
 static inline int cstr_setmeta_stt(cstr_t, size_t);
@@ -124,7 +138,7 @@ static inline cstr_tt
 /* Return `cstr_t` type*/
 static inline cstr_tt 
     cstrtype(cstr_t p)
- {	return (p == NULL) ? NULL : ((*((uint8_t*)(p)) & CSTR_TYPE_MASK) >> CSTR_TYPE_BITS);}
+ {	return (p == NULL) ? 0 : ((*((uint8_t*)(p)) & CSTR_TYPE_MASK) >> CSTR_TYPE_BITS);}
 
 /* Return header position*/
 static inline uint8_t* 
@@ -366,6 +380,36 @@ static inline size_t
     return 0;
 }
 
+static inline size_t
+	header_cstrstt(header_cnt h)
+{
+	cstr_tt _type	= header_type(h);
+	switch (_type)
+	{
+		case CSTR_TYPE_0:
+			return h.h_0.cstrstt;
+		case CSTR_TYPE_1:
+			return h.h_1.cstrstt;
+		case CSTR_TYPE_2:
+			return h.h_2.cstrstt;
+	}
+	return 0;
+}
+
+static inline int
+	get_header_inf (header_cnt h, HEADER_META _inf)
+{
+	switch (_inf)
+	{
+		case METADATA_BUFSIZE:
+			return header_bufsize(h);
+		case METADATA_RELSIZ:
+			return header_relsiz(h);
+		case METADATA_CSTRSTT:
+			return header_cstrstt(h);
+	}
+}
+
 //---------------Assess function------------------------
 //API: get `bufsize` data
 size_t 
@@ -492,26 +536,11 @@ static int
     if (p == NULL)
         return 0;
     cstr_tt _type = cstrtype(p);
-    switch (_type)
-    {
-        //[FIXME]
-    	case CSTR_TYPE_0:
-			head0 _hdr = CSTR_HEAD(0, p);
-			 switch (_assign)
-			 {
-				 case METADATA_BUFSIZE:
-					 _hdr.bufsize	= content;
-					 return content;
-				 case METADATA_RELSIZ:
-					 _hdr.relsiz	= content;
-					 return content;
-				 case METADATA_CSTRSTT:
-					 _hdr.cstrstt	= content;
-					 return content;
-			 }
-            break;
-        case CSTR_TYPE_1:
-            head1 _hdr = CSTR_HEAD(1, p);
+	switch (_type)
+	{
+		case CSTR_TYPE_0:
+			while(0){}
+			CSTR_HEAD_TYPE(0) _hdr = *CSTR_HEAD(0, p);
 			switch (_assign)
 			{
 				case METADATA_BUFSIZE:
@@ -523,42 +552,47 @@ static int
 				case METADATA_CSTRSTT:
 					_hdr.cstrstt	= content;
 					return content;
+				default:
+					return 0;
 			}
-            break;
-        case CSTR_TYPE_2:
-			head2 _hdr = CSTR_HEAD(2, p);
+			break;
+		case CSTR_TYPE_1:
+			while(0){}
+			CSTR_HEAD_TYPE(1) _hdr_0 = *CSTR_HEAD(1, p);
 			switch (_assign)
 			{
 				case METADATA_BUFSIZE:
-					_hdr.bufsize	= content;
+					_hdr_0.bufsize	= content;
 					return content;
 				case METADATA_RELSIZ:
-					_hdr.relsiz		= content;
+					_hdr_0.relsiz	= content;
 					return content;
 				case METADATA_CSTRSTT:
-					_hdr.cstrstt	= content;
+					_hdr_0.cstrstt	= content;
 					return content;
+				default:
+					return 0;
 			}
-            break;
-        default:
-            return 0;
-    }
-    //CSTR_HEADER_TYPE(_type) _hdr = CSTR_HEAD(_type, p);
-    switch (_assign)
-     {
-        case METADATA_BUFSIZE:
-			switch (CSTR_TYPE_)
-            _hdr.bufsize    = content;
-            return content;
-        case METADATA_RELSIZ:
-            _hdr.relsiz     = content;
-            return content;
-        case METADATA_CSTRSTT:
-            _hdr.cstrstt    = content;
-            return content;
-    }
-    return 0;
-}
+			break;
+		case CSTR_TYPE_2:
+			while(0){}
+			CSTR_HEAD_TYPE(2) _hdr_1 = *CSTR_HEAD(2, p);
+			switch (_assign)
+			{
+				case METADATA_BUFSIZE:
+					_hdr_1.bufsize	= content;
+					return content;
+				case METADATA_RELSIZ:
+					_hdr_1.relsiz	= content;
+					return content;
+				case METADATA_CSTRSTT:
+					_hdr_1.cstrstt	= content;
+					return content;
+				default:
+					return 0;
+			}
+	}
+ }
 
 /*set `bufsize` metadata*/
 static inline int 
@@ -591,21 +625,24 @@ static int
     {
         //[FIXME]: Read compilation error
         case CSTR_TYPE_0:
+			while(0){}
             HEADER_TYPE(0)* hhd = (HEADER_TYPE(0)*) 
                 ((uint8_t*)(p) - sizeof(HEADER_TYPE(0)));
             *hhd = _header.h_0;
             return -1;
             break;
         case CSTR_TYPE_1:
-            HEADER_TYPE(1)* hhd = (HEADER_TYPE(1)*)
+            while(0){}
+			HEADER_TYPE(1)* hhd_0 = (HEADER_TYPE(1)*)
                 ((uint8_t*)(p) - sizeof(HEADER_TYPE(1)));
-            *hhd = _header.h_1;
+            *hhd_0 = _header.h_1;
             return -1;
             break;
         case CSTR_TYPE_2:
-            HEADER_TYPE(2)* hhd = (HEADER_TYPE(2)*)
+			while(0){}
+            HEADER_TYPE(2)* hhd_1 = (HEADER_TYPE(2)*)
                 ((uint8_t*)(p) - sizeof(HEADER_TYPE(2)));
-            *hhd = _header.h_2;
+            *hhd_1 = _header.h_2;
             return -2;
             break;
     }
@@ -687,25 +724,22 @@ static header_cnt fresh_hdr(setup_man inf)
     switch (inf._type)
     {
         case CSTR_TYPE_0:
-            HEADER_CNT_COMP(0, _return) = HEADER_TYPE(0)
-            {
-                .cstrstt = inf.type,
+            HEADER_CNT_COMP(0, _return) = (HEADER_TYPE(0)){
+                .cstrstt = inf._type,
                 .bufsize = inf.nof_buffer,
                 .relsiz  = 0
             };
             break;
         case CSTR_TYPE_1:
-            HEADER_CNT_COMP(1, _return) = HEADER_TYPE(1)
-            {
-                .cstrstt = inf.type,
+            HEADER_CNT_COMP(1, _return) = (HEADER_TYPE(1)){
+                .cstrstt = inf._type,
                 .bufsize = inf.nof_buffer,
                 .relsiz  = 0
             };
             break;
         case CSTR_TYPE_2:
-            HEADER_CNT_COMP(2, _return) = HEADER_TYPE(2)
-            {
-                .cstrstt = inf.type,
+            HEADER_CNT_COMP(2, _return) = (HEADER_TYPE(2)){
+                .cstrstt = inf._type,
                 .bufsize = inf.nof_buffer,
                 .relsiz  =0
             };
@@ -729,15 +763,7 @@ static header_cnt fresh_hdr(setup_man inf)
     __attribute__((warned_unused_result))     
 #endif
 cstr_t ncstrnew(size_t nbytes)
-    /*The return value must be used:
-     * ```
-     cstr_t s = ncstrnew(nbytes);
-     * ```
-     Do not call like this:
-     ```
-     ncstrnew(nbytes);
-     ```
-     */
+
  {
 
 	//header_cnt _gened_header = gen_header(nbytes);
@@ -753,7 +779,7 @@ cstr_t ncstrnew(size_t nbytes)
 #ifdef CSTR_ZERO_STRING
 		memset(_return, '\0', _setup_inf.nofBlk);
 #endif /*not CSTR_ZERO_STRING*/
-        cstr_setmeta(_gened_header, (_return + _setup_inf.datoff));
+        set_meta(_gened_header, (_return + _setup_inf.datoff));
         _return[_setup_inf.nofBlk] = '\0';
 		return (_return  + _setup_inf.datoff);
 	}
@@ -788,7 +814,7 @@ cstr_t ncstrdup (const char* cc)
 	char _type	= cstr_typewn(nlen);
 	size_t _nofBlk	= sizeof(char) * shrink_buf(nlen);
 #endif
-    setup_man _setup_inf    = cstr_inf(nlen)
+    setup_man _setup_inf    = cstr_inf(nlen);
     char* _return  	= (char*) cstr_malloc(sizeof(char) * _setup_inf.nofBlk);
 	if (NULL != _return)
 	 {
@@ -796,7 +822,7 @@ cstr_t ncstrdup (const char* cc)
 #ifdef CSTR_ZERO_STRING
 		memset(_return, '\0', _setup_inf.nofBlk,);
 #endif /*not CSTR_ZERO_STRING*/
-		cstr_setmeta(_gened_header, (_return + _setup_inf.datoff));
+		set_meta(_gened_header, (_return + _setup_inf.datoff));
         _return[_setup_inf.nofBlk] = '\0';
 		return (_return + _setup_inf.datoff);
 	}
@@ -849,7 +875,7 @@ cstr_t ncstrcdup(cstr_t pc)
 #ifdef CSTR_ZERO_STRING
 		memset(_return, '\0', sizeof(char) * relsiz);//[FIXME] Is this wise enough to zero all of memory
 #endif /*NOT CSTR_ZERO_STRING*/
-        cstr_setmeta(_cpy_header, (_return + cstrdatoff_wn(relsiz)));
+        set_meta(_cpy_header, (_return + cstrdatoff_wn(relsiz)));
         _return[relsiz] = '\0';
 		return (_return + cstrdatoff_wn(relsiz));
 	}
@@ -892,7 +918,7 @@ uint8_t cstr_reeval(cstr_t pc)	    //Re-evaluate metadata, 'bufsize' and 'relsiz
     size_t relsiz           = cstr_relsiz(pc);
     
 	header_cnt _cpy_header 	= gen_header(strlen(pc));
-	cstr_setmeta(_cpy_header, pc);
+	set_meta(_cpy_header, pc);
 	return 0;
 }
 
@@ -965,7 +991,7 @@ char* cstrcpy(cstr_t* dest, cstr_t src)
     */
 
     setup_man _setup_inf= cstr_inf_wh(_src_header);
-    size_t relsiz       = cstr_relsiz(_src_header);
+    size_t relsiz       = header_relsiz(_src_header);
 	char* _alloc		= (char*) cstr_realloc(cstr_head(*dest), _setup_inf.nofBlk);
 	if (NULL == _alloc)
 	 {
