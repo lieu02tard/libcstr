@@ -48,7 +48,7 @@ static inline uint8_t* cstr_head(cstr_t);
 
 static inline size_t cstr_bufsize(cstr_t);
 static inline size_t cstr_bufsize_s(cstr_t);
-static inline uint32_t cstr_relsiz(cstr_t);
+static inline size_t cstr_relsiz(cstr_t);
 static inline size_t cstr_relsiz_s(cstr_t);
 
 static inline size_t cstrdatoff(cstr_tt);
@@ -117,7 +117,7 @@ static inline void cstr_err(const char* pc, int exec_code) {}
 //#define are avoid at all cost with 'inline' function
 
 /* Return `cstrstt` metadata*/
-static inline uint8_t 
+static inline cstr_tt
     cstrstt(cstr_t p)		
  {	return (p == NULL) ? 0 : *((uint8_t*)(p) - 1);}
 
@@ -162,7 +162,7 @@ static inline size_t
  {	
     if (NULL == p)
         return 0;
-    cstr_t _type = cstrtype(p);
+    cstr_tt _type = cstrtype(p);
     switch (_type)
     {
         case CSTR_TYPE_0:
@@ -495,14 +495,50 @@ static int
     switch (_type)
     {
         //[FIXME]
-        case CSTR_TYPE_0:
-            CSTR_HEAD_TYPE(0) _hdr = *CSTR_HEAD(0, p);
+    	case CSTR_TYPE_0:
+			head0 _hdr = CSTR_HEAD(0, p);
+			 switch (_assign)
+			 {
+				 case METADATA_BUFSIZE:
+					 _hdr.bufsize	= content;
+					 return content;
+				 case METADATA_RELSIZ:
+					 _hdr.relsiz	= content;
+					 return content;
+				 case METADATA_CSTRSTT:
+					 _hdr.cstrstt	= content;
+					 return content;
+			 }
             break;
         case CSTR_TYPE_1:
-            CSTR_HEAD_TYPE(1) _hdr = *CSTR_HEAD(1, p);
+            head1 _hdr = CSTR_HEAD(1, p);
+			switch (_assign)
+			{
+				case METADATA_BUFSIZE:
+					_hdr.bufsize	= content;
+					return content;
+				case METADATA_RELSIZ:
+					_hdr.relsiz		= content;
+					return content;
+				case METADATA_CSTRSTT:
+					_hdr.cstrstt	= content;
+					return content;
+			}
             break;
         case CSTR_TYPE_2:
-            CSTR_HEAD_TYPE(2) _hdr = *CSTR_HEAD(2, p);
+			head2 _hdr = CSTR_HEAD(2, p);
+			switch (_assign)
+			{
+				case METADATA_BUFSIZE:
+					_hdr.bufsize	= content;
+					return content;
+				case METADATA_RELSIZ:
+					_hdr.relsiz		= content;
+					return content;
+				case METADATA_CSTRSTT:
+					_hdr.cstrstt	= content;
+					return content;
+			}
             break;
         default:
             return 0;
@@ -511,6 +547,7 @@ static int
     switch (_assign)
      {
         case METADATA_BUFSIZE:
+			switch (CSTR_TYPE_)
             _hdr.bufsize    = content;
             return content;
         case METADATA_RELSIZ:
@@ -614,7 +651,7 @@ static setup_man cstr_inf_wn(size_t nbytes)
  {
     setup_man _return   = fresh_sm;
     cstr_tt _type       = cstr_typewn(nbytes);
-    size_t _buffer      = cstr_datbuf(_type);
+    size_t _buffer      = cstrdatbuf(_type);
     size_t nof_buffer   = nofbuffer(nbytes);
     size_t nofBlk       = _buffer * nof_buffer;
     _return = (setup_man) {

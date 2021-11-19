@@ -174,7 +174,7 @@ char*	cstrncat (cstr_t* dest, cstr_t src, size_t nbytes);
 char* 	cstrngcat (cstr_t* dest, const char* src, size_t nbytes);
 
 
-void	cst_reeval (cstr_t);
+uint8_t	cstr_reeval (cstr_t);
 
 //Free
 cstr_t	cstrfree (cstr_t);
@@ -203,6 +203,9 @@ char* 	cstrgstr (cstr_t haystack, const char * needle);
 char* 	cstrtok (cstr_t s, cstr_t delim);
 char* 	cstrgtok (cstr_t s, const char* delim);
 */
+void do_nothing()
+{
+}
 #ifdef __cplusplus
 }
 #endif
