@@ -790,16 +790,8 @@ cstr_t ncstrnew(size_t nbytes)
 	}
 }
 
-//ncstrnew() version if user don't want to get return value
-cstr_t* np_cstrnew(size_t nbytes, cstr_t* pp)
- {
-     if (NULL == pp)
-         return NULL;
-     *pp    = ncstrnew(nbytes);
-     return pp;
- }
 
-/*Create a clonned string*/
+/*Create a clonned string from a C literal string*/
 #ifdef __GNUC__
     __attribute__((warned_unused_result))
 #endif
@@ -833,14 +825,16 @@ cstr_t ncstrdup (const char* cc)
 	}
 }
 
-/*Clone `cstr_t`*/
+/*Return a deep copy of pc
+ * If the result is unused, memory leak will occur*/
 #ifdef __GNUC__
     __attribute__((warned_unused_result))
 #endif
-cstr_t ncstrcdup(cstr_t pc)
-
+cstr_t ncstrdcpy(cstr_t pc)
     /* If the original 'pc' variable are corrupt, if 'CSTR_AUTOEVAL_OFF' is flagged, the new string will be corrupted as well. You may want to introduce a 'CSTR_SAFECLONE' flag to carefully reeval new string's value*/
 {
+	// Nullify function to remove this from deep copy
+
     if (NULL == pc)
     {
         cstr_err("ncstrcdup(): NULL pointer provided", 1);
@@ -850,12 +844,12 @@ cstr_t ncstrcdup(cstr_t pc)
 	cstr_reeval(pc);
 #endif  /*CSTR_AUTOEVAL_OFF*/
     
-	header_cnt _cpy_header 	= get_meta(pc);
+	header_cnt _cpy_header 	= get_meta(*pc);
 	size_t relsiz		= get_header_inf(_cpy_header, METADATA_RELSIZ);
 	size_t bufsize		= get_header_inf(_cpy_header, METADATA_BUFSIZE);
 #ifdef CSTR_SAFECLONE
     if (pc[relsiz] != '\0')
-        relsiz  = strlen(pc);
+        relsiz  = strlen(*pc);
     setup_man _setup_inf= cstr_inf(relsiz);
     if (bufsize < _setup_inf.nofBuffer)
     {
@@ -884,6 +878,19 @@ cstr_t ncstrcdup(cstr_t pc)
 		cstr_err("ncstrdup(): Allocation failed", 0);
 		return NULL;
 	}
+}
+
+/* Move ownership and invalidate src */
+#ifdef __GNUC__
+	__attribute__((warn_unused_result))
+#endif /*not __GNUC__*/
+cstr_t	ncstrcdup(cstr_t* src)
+{
+	char* _str 	= *src;
+	if (_str == NULL)
+		return NULL;
+	*src	= NULL;
+	return _str;
 }
 
 //[FIXME]
@@ -967,8 +974,20 @@ uint8_t cstr_voidarr(cstr_t p)
     return 0;
 }
 
+/* Move ownership*/
+char* cstrcpy(cstr_t* dest, cstr_t* src)
+{
+	if (NULL == *src)
+		return NULL;
+	if (*dest != NULL)
+		cstrfree(*dest);
+	char* _src	= *src;
+	*dest		= _src;
+	*src		= NULL;
+	return _src;
+}
 /*Destroy all *dest string memory and clone the src string*/
-char* cstrcpy(cstr_t* dest, cstr_t src)
+char* cstrdcpy(cstr_t* dest, cstr_t src)
  {
      if (*dest == src)
     {
@@ -1035,8 +1054,35 @@ char*
 	return *dest;
 }
 
+char* cstrncpy(cstr_t* dest, cstr_t* src, size_t nbytes)
+{
+#ifdef CSTR_AUTOEVAL_OFF
+	cstr_reeval(*src);
+#endif /*not CST_AUTOEVAL_OFF*/
+	size_t nbytes_eff	= nbytes;
+	size_t relsiz		= cstr_relsiz(src);
+	if (relsiz < nbytes)
+	{
+		cstr_err("cstrncpy(): out of source's range", 1);
+		nbytes_eff = relsiz;
+	}
+
+	setup_man inf		= cstr_inf(nbytes_eff);
+	char* _str			= *src;
+	*src				= NULL;
+	
+	char* _alloc		= (char*) cstr_realloc(cstr_head(_str), inf.nofBlk);
+	if (NULL == _alloc)
+	{
+		cstr_err("cstrncpy(): Allocate error", 0);
+		return NULL;
+	}
+	char* _return		= _alloc + inf.datoff;
+	_return[nbytes_eff]	= '\0';
+	return _return;
+}
 char* 
-    cstrncpy(cstr_t * dest, cstr_t src, size_t nbytes)//String copy but with a limited number of bytes copied
+    cstrndcpy(cstr_t * dest, cstr_t src, size_t nbytes)//String copy but with a limited number of bytes copied
  {
 	cstr_reeval(src);
 	size_t nbytes_eff	= nbytes;

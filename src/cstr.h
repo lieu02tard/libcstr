@@ -156,16 +156,21 @@ typedef enum {
 cstr_t	ncstrmt();
 cstr_t 	ncstrnew (size_t);
 cstr_t 	ncstrdup (const char*);
-cstr_t 	ncstrcdup (cstr_t);
-cstr_t	nfcstrdup(const char*, ...);
+cstr_t	ncstrdcpy (cstr_t);				// Deep copy
+cstr_t 	ncstrcdup (cstr_t*);			// Shallow copy and invalidate old string
+cstr_t	nfcstrdup(const char*, ...);	// Format string
 //Manipulation
 //
 //Append
-char*	cstrcpy (cstr_t* dest, cstr_t src);
-char* 	cstrgcpy (cstr_t* dest, const char* src);
 
-char* 	cstrncpy (cstr_t* dest, cstr_t src, size_t nbytes);
-char* 	cstrngcpy (cstr_t* dest, const char* src, size_t nbytes);
+char*	cstrcpy(cstr_t* dest, cstr_t* src);				// Transfer ownership
+char*	cstrdcpy (cstr_t* dest, cstr_t src);			// Deep copy
+char* 	cstrdgcpy (cstr_t* dest, const char* src);
+
+char*	cstrncpy(cstr_t* dest, cstr_t* src, size_t nbytes);				// Transfer ownership
+char* 	cstrndcpy (cstr_t* dest, cstr_t src, size_t nbytes);			// Deep copy
+char* 	cstrndgcpy (cstr_t* dest, const char* src, size_t nbytes);
+
 
 char*	cstrcat (cstr_t* dest, cstr_t src);
 char*	cstrgcat (cstr_t* dest, const char* src);
