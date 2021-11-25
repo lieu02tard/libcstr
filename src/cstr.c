@@ -763,14 +763,7 @@ static header_cnt fresh_hdr(setup_man inf)
     __attribute__((warned_unused_result))     
 #endif
 cstr_t ncstrnew(size_t nbytes)
-
  {
-
-	//header_cnt _gened_header = gen_header(nbytes);
-#if 0
-     char _type = cstr_typewn(nbytes);
-	size_t _nofBlk = sizeof(char)  * shrink_buf(nbytes);
-#endif 
     setup_man _setup_inf = cstr_inf(nbytes);
 	char* _return	= (char*) cstr_malloc(_setup_inf.nofBlk);
 	if (NULL != _return)
@@ -796,16 +789,8 @@ cstr_t ncstrnew(size_t nbytes)
     __attribute__((warned_unused_result))
 #endif
 cstr_t ncstrdup (const char* cc)
-
  {
-	//char* _return 	= (char*) malloc(sizeof(char) * (nbytes + DATAOFF(nbytes)));
-	//if (NULL == _return)
-	//	ERR(0);
 	size_t nlen	= strlen(cc);
-#if 0
-	char _type	= cstr_typewn(nlen);
-	size_t _nofBlk	= sizeof(char) * shrink_buf(nlen);
-#endif
     setup_man _setup_inf    = cstr_inf(nlen);
     char* _return  	= (char*) cstr_malloc(sizeof(char) * _setup_inf.nofBlk);
 	if (NULL != _return)
@@ -816,6 +801,7 @@ cstr_t ncstrdup (const char* cc)
 #endif /*not CSTR_ZERO_STRING*/
 		set_meta(_gened_header, (_return + _setup_inf.datoff));
         _return[_setup_inf.nofBlk] = '\0';
+		memcpy(_return + _setup_inf.datoff, cc, nlen);
 		return (_return + _setup_inf.datoff);
 	}
 	else
@@ -835,43 +821,46 @@ cstr_t ncstrdcpy(cstr_t pc)
 {
 	// Nullify function to remove this from deep copy
 
-    if (NULL == pc)
-    {
-        cstr_err("ncstrcdup(): NULL pointer provided", 1);
-        return NULL;
-    }
+	if (NULL == pc)
+	 {
+		cstr_err("ncstrcdup(): NULL pointer provided", 1);
+		return NULL;
+	}
 #ifndef CSTR_AUTOEVAL_OFF
 	cstr_reeval(pc);
 #endif  /*CSTR_AUTOEVAL_OFF*/
-    
 	header_cnt _cpy_header 	= get_meta(*pc);
 	size_t relsiz		= get_header_inf(_cpy_header, METADATA_RELSIZ);
 	size_t bufsize		= get_header_inf(_cpy_header, METADATA_BUFSIZE);
+
+//Validate header
 #ifdef CSTR_SAFECLONE
-    if (pc[relsiz] != '\0')
-        relsiz  = strlen(*pc);
-    setup_man _setup_inf= cstr_inf(relsiz);
-    if (bufsize < _setup_inf.nofBuffer)
-    {
-        bufsize = _setup_inf.nofBuffer;
-        cstrerr("ncstrcdup(): cstr header corrupted", 1);
-    if (getinf(_cpy_header, METADATA_TYPE) != cstr_gettype(relsiz))
-    {
-        cstrerr("ncstrcdup(): cstr header corrupted", 1);
-        setdat_p(&_cpy_header, METADATA_TYPE, cstr_gettype(relsiz));    //function setdat_p() [FIXME]
-    }
-
+	if (pc[relsiz] != '\0')
+		relsiz  = strlen(*pc);
+	setup_man _setup_inf= cstr_inf(relsiz);
+	if (bufsize < _setup_inf.nofBuffer)
+	 {
+		bufsize = _setup_inf.nofBuffer;
+		cstrerr("ncstrcdup(): cstr header corrupted", 1);
+	}
+	if (getinf(_cpy_header, METADATA_TYPE) != cstr_gettype(relsiz))
+	 {
+		cstrerr("ncstrcdup(): cstr header corrupted", 1);
+		setdat_p(&_cpy_header, METADATA_TYPE, cstr_gettype(relsiz));    //function setdat_p() [FIXME]
+	}
 #endif /*not CSTR_SAFECLONE*/
-	char* _return		= (char*) cstr_malloc(sizeof(char) * relsiz);
 
+	setup_man _inf		= cstr_inf(relsiz);
+	char* _return		= (char*) cstr_malloc(sizeof(char) * _inf.nofBlk);
 	if (NULL != _return)
 	 {
 #ifdef CSTR_ZERO_STRING
 		memset(_return, '\0', sizeof(char) * relsiz);//[FIXME] Is this wise enough to zero all of memory
-#endif /*NOT CSTR_ZERO_STRING*/
-        set_meta(_cpy_header, (_return + cstrdatoff_wn(relsiz)));
-        _return[relsiz] = '\0';
-		return (_return + cstrdatoff_wn(relsiz));
+#endif /*not CSTR_ZERO_STRING*/
+		set_meta(_cpy_header, (_return + _inf.datoff));
+		memcpy(_return + _inf.datoff, pc, relsiz);
+		_return[relsiz] = '\0';
+		return (_return + _inf.datoff);
 	}
 	else
 	 {
@@ -938,7 +927,6 @@ cstr_t cstrfree(cstr_t pc)
     /*------------WARNING------------
      * A string freed will have NULL value for the 'char*' pointer
      * This is difference from string with 0 characters or a NULL header*/
-//	__attribute__((warn_unused_result))
  {
 	if (NULL == pc)
 		return NULL;
@@ -946,32 +934,20 @@ cstr_t cstrfree(cstr_t pc)
 	pc = NULL;
 	return pc;
 }
-#if 0
-cstr_t cstrfree_t (cstr_t pc)
-#ifdef __GNUC__
-    __attribute__((warned_unused_result))
-#endif /*not __GNUC__*/
- {
-    if (NULL == pc)
-        return NULL;
-    free(cstr_head(pc));
-    return NULL;
-}
-#endif
 
 //===========STRING MANIPULATION FUNCTION============
 
 /*Write '\0' to all exist memory space of p*/
 uint8_t cstr_voidarr(cstr_t p)
  {
-     //setup_man _setup_inf = cstr_inf(p);
+	 //setup_man _setup_inf = cstr_inf(p);
 #ifdef CSTR_AUTOEVAL
-    cstr_reeval(p);
+	cstr_reeval(p);
 #endif
-    setup_man _setup_inf = cstr_inf_wp(p);
-    memset(p, '\0', sizeof(char) * _setup_inf.nofBlk);
-    cstr_setmeta_relsiz(p, 0);
-    return 0;
+	setup_man _setup_inf = cstr_inf_wp(p);
+	memset(p, '\0', sizeof(char) * _setup_inf.nofBlk);
+	cstr_setmeta_relsiz(p, 0);
+	return 0;
 }
 
 /* Move ownership*/
@@ -1002,12 +978,6 @@ char* cstrdcpy(cstr_t* dest, cstr_t src)
 #endif /*not CSTR_SECURITY_WIPE*/
 	//cstr_t* since the real 'cstr_t' value will be realloc()
 	header_cnt _src_header 	= get_meta(src);
-/*
-	size_t _block_size	= cstr_buffer_size_wt(get_header_inf(_src_header, HEADER_TYPE));
-	size_t bufsize		= get_header_inf(_src_header, HEADER_BUFSIZE);
-	size_t relsiz		= get_header_inf(_src_header, HEADER_RELSIZ);
-	uint64_t nofBlk		= bufsize * _block_size * sizeof(char);
-    */
 
     setup_man _setup_inf= cstr_inf_wh(_src_header);
     size_t relsiz       = header_relsiz(_src_header);
@@ -1027,17 +997,15 @@ char* cstrdcpy(cstr_t* dest, cstr_t src)
 	memcpy(*dest, src, relsiz * sizeof(char));	//sizeof(char) is rather useless since it is defined by the C standard to be 1 (byte). It just serve coding conventioning purposes
 	return *dest;
 }
-/* Copy string*/
-char*
-    cstrgcpy(cstr_t* dest, const char* src)
+
+/* Copy of C string literal */
+char* cstrdgcpy(cstr_t* dest, const char* src)
  {
 	int relsiz		= strlen(src);
-	//size_t _block_size	= cstr_buffer_size_wn(relsiz);
-	//size_t nofBlk		= shrink_buf(relsiz);
 	setup_man inf   = cstr_inf(relsiz);
 	char* _alloc		= (char*) cstr_realloc(cstr_head(*dest), inf.nofBlk);
 	if (NULL == _alloc)
-	{
+	 {
 		cstr_err("cstrgcpy(): Allocate error", 0);
 		return NULL;
 	}
@@ -1046,7 +1014,7 @@ char*
 #ifdef CSTR_ZERO_STRING
 	memset(_alloc, '\0', inf.nofBlk);
 #else
-    _alloc[inf.nofBlk] = '\0';
+	_alloc[inf.nofBlk] = '\0';
 #endif /*not CSTR_ZERO_STRING*/
 	set_meta(gen_header(relsiz), *dest);
 	memcpy(*dest, src, relsiz * sizeof(char));
@@ -1054,11 +1022,13 @@ char*
 	return *dest;
 }
 
+// Move function
+// Resize *src to size nbytes and move to *dest
 char* cstrncpy(cstr_t* dest, cstr_t* src, size_t nbytes)
 {
 #ifdef CSTR_AUTOEVAL_OFF
 	cstr_reeval(*src);
-#endif /*not CST_AUTOEVAL_OFF*/
+#endif /*not CSTR_AUTOEVAL_OFF*/
 	size_t nbytes_eff	= nbytes;
 	size_t relsiz		= cstr_relsiz(src);
 	if (relsiz < nbytes)
@@ -1081,10 +1051,13 @@ char* cstrncpy(cstr_t* dest, cstr_t* src, size_t nbytes)
 	_return[nbytes_eff]	= '\0';
 	return _return;
 }
-char* 
-    cstrndcpy(cstr_t * dest, cstr_t src, size_t nbytes)//String copy but with a limited number of bytes copied
+
+// Deep copy limited amount of 'cstr_t' string
+char* cstrndcpy(cstr_t * dest, cstr_t src, size_t nbytes)
  {
+#ifdef CSTR_AUTOEVAL_OFF
 	cstr_reeval(src);
+#endif /*not CSTR_AUTOEVAL_OFF*/
 	size_t nbytes_eff	= nbytes;
 	size_t relsiz		= cstr_relsiz(src);
 	if (relsiz < nbytes)
@@ -1093,7 +1066,6 @@ char*
 		nbytes_eff = relsiz;
 	}
 
-	//size_t _block_size	= cstr_buffer_size_wn(nbytes_eff);
 	setup_man inf       = cstr_inf(nbytes_eff);
 
 	char* _alloc		= (char*) cstr_realloc(cstr_head(*dest), inf.nofBlk);
@@ -1111,8 +1083,8 @@ char*
 	return *dest;
 }
 
-char* 
-    cstrngcpy(cstr_t* dest, const char* src, size_t nbytes)//String copy with a limited number of bytes copied
+// Deep copy a limit amount of C literal string
+char* cstrndgcpy(cstr_t* dest, const char* src, size_t nbytes)
  {
 	size_t nbytes_eff	= nbytes;
 	size_t relsiz		= strlen(src);
@@ -1139,20 +1111,18 @@ char*
 	return *dest;
 }
 
-char* 
-    cstrcat(cstr_t* dest, cstr_t src)   //Append 'src' to 'dest'
+char* cstrcat(cstr_t* dest, cstr_t src)   //Append 'src' to 'dest'
 {
 #ifndef CSTR_AUTOEVAL_OFF
 	cstr_reeval(src);
 	cstr_reeval(*dest);
 #endif
 	size_t _src_relsiz 	= cstr_relsiz(src);
-    //[opinion]: Whether copy the entire block of src or until the '\0' terminator
+	//[opinion]: Whether copy the entire block of src or until the '\0' terminator
 	size_t _dest_relsiz	= cstr_relsiz(*dest);
 	size_t _final_relsiz	= _src_relsiz + _dest_relsiz;
 
-	//size_t nofBlk		= shrink_buf(_final_relsiz);
-    setup_man inf       = cstr_inf(_final_relsiz);
+	setup_man inf       = cstr_inf(_final_relsiz);
 	char* _alloc		= (char*) cstr_realloc(cstr_head(*dest), inf.nofBlk);
 	if (NULL == _alloc)
 	 {
@@ -1160,22 +1130,20 @@ char*
 		return NULL;
 	}
 
-    *dest           = _alloc + inf.datoff;
+	*dest           = _alloc + inf.datoff;
 #ifdef CSTR_ZERO_STRING
-    memset(*dest + _dest_relsiz, '\0', inf.nofBlk - _dest_relsiz);
+	memset(*dest + _dest_relsiz, '\0', inf.nofBlk - _dest_relsiz);
 #else
-    _alloc[inf.nofBlk]  = '\0';
+	_alloc[inf.nofBlk]  = '\0';
 #endif /*not CSTR_ZERO_STRING*/
 
-	//*dest			= _alloc + inf.datoff;
 	memcpy(*dest + _dest_relsiz * sizeof(char), src, _src_relsiz * sizeof(char));
 	set_meta(gen_header(_final_relsiz), *dest);
 
 	return *dest;
 }
 
-char* 
-    cstrgcat(cstr_t* dest, const char* src)// Append 'src' to 'dest'
+char*  cstrgcat(cstr_t* dest, const char* src)// Append 'src' to 'dest'
  {
 #ifndef CSTR_AUTOEVAL_OFF
 	cstr_reeval(*dest);
@@ -1188,15 +1156,15 @@ char*
 	setup_man inf       = cstr_inf(_final_relsiz);
 	char* _alloc		= (char*) cstr_realloc(cstr_head(*dest), inf.nofBlk);
 	if (NULL == _alloc)
-	{
+	 {
 		cstr_err("cstrgcat(): Allocate error", 0);
 		return NULL;
 	}
 
 #ifdef CSTR_ZERO_STRING
-    memset(_alloc, '\0', inf.nofBlk);
+	memset(_alloc, '\0', inf.nofBlk);
 #else /*not CSTR_ZERO_STRING*/
-    _alloc[inf.nofBlk] = '\0';
+	_alloc[inf.nofBlk] = '\0';
 #endif /* not CSTR_ZERO_STRING*/
 
 	*dest			= _alloc + inf.datoff;
@@ -1206,8 +1174,7 @@ char*
 	return *dest;
 }
 
-char* 
-    cstrncat(cstr_t* dest, cstr_t src, size_t nbytes)//Append 'src' to 'dest' with limited number of bytes
+char* cstrncat(cstr_t* dest, cstr_t src, size_t nbytes)//Append 'src' to 'dest' with limited number of bytes
  {
 #ifndef CSTR_AUTOEVAL_OFF
 	cstr_reeval(*dest);
@@ -1220,9 +1187,8 @@ char*
 		_src_relsiz = nbytes;
 	size_t _final_relsiz	= _src_relsiz + _dest_relsiz;
 
-	//size_t nofBlk		= shrink_buf(_final_relsiz);
 	setup_man inf       = cstr_inf(_final_relsiz);
-    char* _alloc		= (char*) cstr_realloc(cstr_head(*dest), inf.nofBlk);
+	char* _alloc		= (char*) cstr_realloc(cstr_head(*dest), inf.nofBlk);
 	if (NULL == _alloc)
 	 {
 		cstr_err("cstrncat(): Allocate error", 0);
@@ -1236,8 +1202,7 @@ char*
 	return *dest;
 }
 
-char* 
-    cstrngcat(cstr_t* dest, const char* src, size_t nbytes)//Append 'src' to 'dest' with limited number of bytes
+char* cstrngcat(cstr_t* dest, const char* src, size_t nbytes)//Append 'src' to 'dest' with limited number of bytes
  {
 #ifndef CSTR_AUTOEVAL_OFF
 	cstr_reeval(*dest);
@@ -1249,9 +1214,8 @@ char*
 		_src_relsiz = nbytes;
 	size_t _final_relsiz	= _src_relsiz + _dest_relsiz;
 
-	//size_t nofBlk 		= shrink_buf(_final_relsiz);
 	setup_man inf           = cstr_inf(_final_relsiz);
-    char* _alloc		= (char*) cstr_realloc(cstr_head(*dest), inf.nofBlk);
+	char* _alloc		= (char*) cstr_realloc(cstr_head(*dest), inf.nofBlk);
 	if (NULL == _alloc)
 	 {
 		cstr_err("cstrngcat(): Allocate error", 0);
