@@ -1,6 +1,7 @@
 #include "cstr.h"
 #include <stdlib.h>
-//----------Macro---------------------
+
+//-------Type macro-----------
 #define CSTR_TYPE_0 1
 #define CSTR_TYPE_1 2
 #define CSTR_TYPE_2 3
@@ -27,13 +28,16 @@
 #ifndef cstr_realloc
 	#define cstr_realloc realloc
 #endif
-//----------Type definition
+
+//----------Secondary type definition-------
+
 typedef enum 
  {
     METADATA_BUFSIZE = 0x04,
     METADATA_RELSIZ  = 0x08,
     METADATA_CSTRSTT = 0x10,
 } HEADER_META;
+
 typedef struct {
     size_t nofBlk;          //Number of characters-sized memory block
     size_t nof_buffer;      //Number of buffers
@@ -42,39 +46,40 @@ typedef struct {
     size_t datoff;          //Data header offset
 } setup_man;
 
-static const setup_man 
-    fresh_sm = {
-    .nofBlk     = 0,
-    .nof_buffer = 0,
-    .buffer     = 0,
-    ._type      = 0,
-    .datoff      = 0
-};
+#define fresh_sm (setup_man)\
+    fresh_sm = {\
+    .nofBlk     = 0,\
+    .nof_buffer = 0,\
+    .buffer     = 0,\
+    ._type      = 0,\
+    .datoff      = 0}
+
 //-----------static inline function---------------
 //If some function return result that is specified to the type and not to the variable, the function call for
 //type : foo()
 //variable: foo_p()
-static inline cstr_tt cstrstt(cstr_t);
-static inline cstr_tt cstrtype(cstr_t);
 
-static inline uint8_t* cstr_head(cstr_t);
+static inline cstr_tt cstrstt(const cstr_const_t);
+static inline cstr_tt cstrtype(const cstr_const_t);
 
-static inline size_t cstr_bufsize(cstr_t);
-static inline size_t cstr_bufsize_s(cstr_t);
-static inline size_t cstr_relsiz(cstr_t);
-static inline size_t cstr_relsiz_s(cstr_t);
+static inline uint8_t* cstr_head(const cstr_const_t);
+
+static inline size_t cstr_bufsize(const cstr_const_t);
+static inline size_t cstr_bufsize_s(const cstr_const_t);
+static inline size_t cstr_relsiz(const cstr_const_t);
+static inline size_t cstr_relsiz_s(const cstr_const_t);
 
 static inline size_t cstrdatoff(cstr_tt);
-static inline size_t cstrdatoff_wp(cstr_t);
+static inline size_t cstrdatoff_wp(const cstr_const_t);
 static inline size_t cstrdatbuf (cstr_tt);
-static inline size_t cstrdatbuf_p(cstr_t);
+static inline size_t cstrdatbuf_p(const cstr_const_t);
 
-static inline header_cnt get_meta(cstr_t);
-static inline cstr_tt header_type(header_cnt);
-static inline size_t header_bufsize(header_cnt);
-static inline size_t header_relsiz(header_cnt);
+static inline header_cnt get_meta(const cstr_const_t);
+static inline cstr_tt header_type(const header_cnt);
+static inline size_t header_bufsize(const header_cnt);
+static inline size_t header_relsiz(const header_cnt);
 
-static inline size_t cstr_buffer_size(cstr_t);
+static inline size_t cstr_buffer_size(const cstr_const_t);
 static inline cstr_tt cstr_typewn(size_t);
 static inline size_t cstrdatoff_wn(size_t);
 static inline size_t nofbuffer(size_t);
@@ -89,19 +94,21 @@ static inline int cstr_setmeta_relsiz(cstr_t, size_t);
 static inline int cstr_setmeta_stt(cstr_t, size_t);
 static int set_meta(header_cnt, cstr_t);
 
-static setup_man cstr_inf_wp(cstr_t);
+static setup_man cstr_inf_wp(const cstr_const_t);
 static setup_man cstr_inf(cstr_tt);
 static setup_man cstr_inf_wn(size_t);
 static setup_man cstr_inf_wh(header_cnt);
 static header_cnt fresh_hdr(setup_man inf);
 
-#if 0
-#ifndef CSTR_FILEDEF
-	#define CSTR_FILEDEF stderr
-#endif
-#endif 
 
-/* debugging function*/
+/* cstr_err - Print debugging info. 
+ * @pc:		C literal debug information
+ * @exec_code:	Execute code:
+ * 	1 for non-critical error
+ * 	2 for critical error (prompt for exit)
+ *
+ * 	Only work if CSTR_VERBAL and CSTR_DEBUG flag are defined 
+ */
 #ifdef CSTR_VERBAL
 void cstr_err(const char* pc, int exec_code)
 {
@@ -128,186 +135,197 @@ static inline void cstr_err(const char* pc, int exec_code) {}
 
 
 //-----------------Metadata-related macro-----
-//#define are avoid at all cost with 'inline' function
-
-/* Return `cstrstt` metadata*/
+// Macro are to be avoided with inline function
+/**
+ * cstrstt - return &cstrstt metadata
+ * @p:		&cstr_t to check
+ * */
 static inline cstr_tt
-    cstrstt(cstr_t p)		
- {	return (p == NULL) ? 0 : *((uint8_t*)(p) - 1);}
+    cstrstt(const cstr_const_t p) {
+		return (p == NULL) ? 0 : *((uint8_t*)(p) - 1);}
 
-/* Return `cstr_t` type*/
+/**
+ * cstr_tt - return &cstr_t type
+ * @p:		&cstr_t to check
+ * 
+ * Return 2 last bits of &cstrstt metadata, used as identified bits
+ */
 static inline cstr_tt 
-    cstrtype(cstr_t p)
- {	return (p == NULL) ? 0 : ((*((uint8_t*)(p)) & CSTR_TYPE_MASK) >> CSTR_TYPE_BITS);}
+    cstrtype(const cstr_const_t p) {
+		return (p == NULL) ? 0 : ((*((uint8_t*)(p)) & CSTR_TYPE_MASK) >> CSTR_TYPE_BITS);}
 
-/* Return header position*/
+/* cstr_head - return header position
+ * @p:		&cstr_t to return header position
+ *
+ * return pointer to the head position, contain the metadata of a &cstr_t
+ */
 static inline uint8_t* 
-cstr_head(cstr_t p)
- {	return (p == NULL) ? NULL : (uint8_t*)(p) - cstrdatoff(cstrtype(p));}
+cstr_head(const cstr_const_t p){
+	return (p == NULL) ? NULL : (uint8_t*)(p) - cstrdatoff(cstrtype(p));}
+ 
 
-
-#if 0
-static inline uint16_t 
-    cstr_bufsize(cstr_t p)	//'bufsize' metadata of p
- { 	return (p == NULL) ? 0 : (uint16_t) *((uint8_t*)(p) + 1);}
-#endif 
-
-/* Return `bufsize` metadata*/
+/* cstr_bufsize - return &bufsize metadata
+ * @p:		&cstr_t to get metadata
+ *
+ * &bufsize are the number of buffer (size) allocated
+ */
 static inline size_t
-    cstr_bufsize(cstr_t p)
+	cstr_bufsize(const cstr_const_t p)
  {
-    if (p == NULL)
-        return 0;
-    cstr_tt st_type = cstrtype(p);
-    switch(st_type)
-    {
-        case CSTR_TYPE_0:
-            return CSTR_HEAD(0, p)->bufsize;
-        case CSTR_TYPE_1:
-            return CSTR_HEAD(1, p)->bufsize;
-        case CSTR_TYPE_2:
-            return CSTR_HEAD(2, p)->bufsize;
-    }
-    return 0;
-}
-/* Size of `bufsize` metadata*/
-static inline size_t 
-    cstr_bufsize_s (cstr_t p)
- {	
-    if (NULL == p)
-        return 0;
-    cstr_tt _type = cstrtype(p);
-    switch (_type)
-    {
-        case CSTR_TYPE_0:
-            return sizeof(uint8_t);
-        case CSTR_TYPE_1:
-            return sizeof(uint8_t);
-        case CSTR_TYPE_2:
-            return sizeof(uint16_t);
-    }
-    return 0;
+	if (p == NULL)
+		return 0;
+	cstr_tt st_type = cstrtype(p);
+	switch(st_type)
+	 {
+		case CSTR_TYPE_0:
+			return CSTR_HEAD(0, p)->bufsize;
+		case CSTR_TYPE_1:
+			return CSTR_HEAD(1, p)->bufsize;
+		case CSTR_TYPE_2:
+			return CSTR_HEAD(2, p)->bufsize;
+	}
+	return 0;
 }
 
-/*Retrun `relsiz` metadata*/
+/* cstr_bufsize_s - return &bufsize metadata size(count in bytes)
+ * @p:		&cstr_t to get metadata
+ *
+ * return value is only depend on the type of @p
+ */
+static inline size_t 
+	cstr_bufsize_s (const cstr_const_t  p)
+ {
+	if (NULL == p)
+		return 0;
+	cstr_tt _type = cstrtype(p);
+	switch (_type)
+	{
+		case CSTR_TYPE_0:
+			return sizeof(uint8_t);
+		case CSTR_TYPE_1:
+			return sizeof(uint8_t);
+		case CSTR_TYPE_2:
+			return sizeof(uint16_t);
+	}
+	return 0;
+}
+
+/* cstr_relsiz - return &relsiz metadata
+ * @p:		&cstr_t to get metadata
+ *
+ * @relsiz is number of characters has been used, aka. to the NULL terminator. This is also the return value of strlen()
+ */
 static inline size_t  
-    cstr_relsiz(cstr_t p)
+    cstr_relsiz(const cstr_const_t p)
  {
-    if (p == NULL) 
-        return 0;
-    cstr_tt st_type = cstrtype(p);
-    switch(st_type)
-    {
-        case CSTR_TYPE_0:
-            return CSTR_HEAD(0, p)->relsiz;
-        case CSTR_TYPE_1:
-            return CSTR_HEAD(1, p)->relsiz;
-        case CSTR_TYPE_2:
-            return CSTR_HEAD(2, p)->relsiz;
+	if (p == NULL) 
+		return 0;
+	cstr_tt st_type = cstrtype(p);
+	switch(st_type)
+	{
+		case CSTR_TYPE_0:
+			return CSTR_HEAD(0, p)->relsiz;
+		case CSTR_TYPE_1:
+			return CSTR_HEAD(1, p)->relsiz;
+		case CSTR_TYPE_2:
+			return CSTR_HEAD(2, p)->relsiz;
     }
-    return 0;
+	return 0;
 }
 
-/*Sizeof `relsiz` metadata*/
+/* cstr_relsiz_s - return @relsiz metadata size
+ * @p:		&cstr_t to get metadata
+ *
+ * return value is only depend on type of @p
+ */
 static inline size_t 
-    cstr_relsiz_s(cstr_t p)
+	cstr_relsiz_s(const cstr_const_t p)
  {
-     if (NULL == p)
-        return 0;
-    cstr_tt _type = cstrtype(p);
-    switch (_type)
-    {
-        case CSTR_TYPE_0:
-            return sizeof(uint8_t);
-        case CSTR_TYPE_1:
-            return sizeof(uint16_t);
-        case CSTR_TYPE_2:
-            return sizeof(uint32_t);
-    }
+	if (NULL == p)
+		return 0;
+	cstr_tt _type = cstrtype(p);
+	switch (_type)
+	 {
+		case CSTR_TYPE_0:
+			return sizeof(uint8_t);
+		case CSTR_TYPE_1:
+			return sizeof(uint16_t);
+		case CSTR_TYPE_2:
+			return sizeof(uint32_t);
+	}
 }
 
-#if 0
+
+/* cstrdatoff - return data offset of a header
+ * @_type:	type to test
+ *
+ * Return the data offset (or size) of a header of a type (in bytes)
+ */
 static inline size_t 
-    cstrdatoff (cstr_t* p)	    //Data offset of p's metadata, count in bytes
-#if 0
- {	return (cstrtype(p) == CSTR_TYPE0) ? T0_OFF : (cstrtype(p) == CSTR_TYPE1) ? T1_OFF : T2_OFF;}
-#endif
+	cstrdatoff (cstr_tt _type)
  {
-    if (NULL == p)
-        return 0;
-    cstr_tt flag_tt = cstr_type(p);
-    switch (flag_tt)
-    {
-        case CSRT_TYPE_0:
-            return sizeof(struct head0);
-        case CSTR_TYPE_1:
-            return sizeof(struct head1);
-        case CSRT_TYPE_2:
-            return sizeof(struct head2);
-    }
-    return 0;
+	switch (_type)
+	 {
+		case CSTR_TYPE_0:
+			return sizeof(head0);
+		case CSTR_TYPE_1:
+			return sizeof(head1);
+		case CSTR_TYPE_2:
+			return sizeof(head2);
+	}
+	return 0;
 }
-#endif
-/* Data offset (aka the header size)*/
-static inline size_t 
-    cstrdatoff (cstr_tt _type)
-#if 0
- {	return (_type == CSTR_TYPE0) ? T0_OFF : (_type == CSTR_TYPE1) ? T1_OFF : T2_OFF;}
-#endif
- {
-    switch (_type)
-     {
-        case CSTR_TYPE_0:
-            return sizeof(head0);
-        case CSTR_TYPE_1:
-            return sizeof(head1);
-        case CSTR_TYPE_2:
-            return sizeof(head2);
-    }
-    return 0;
-}
-/*Data offset with pointer*/
+/* cstrdatoff_wp - return data offset of the header of a &cstr_t
+ * @p:		&cstr_t to test
+ *
+ * Return data offset (or size) of a header of a &cstr_t
+ */
 static inline size_t
-    cstrdatoff_wp(cstr_t p)
+	cstrdatoff_wp(const cstr_const_t p)
  {
-    return cstrdatoff(cstrtype(p));
+	return cstrdatoff(cstrtype(p));
 }
 
-/*Data buffer with given type*/
+/* cstrdatbuf - return data buffer of a type
+ * @_type:	type to test
+ *
+ * cstr_t is allocated buffer by buffer. Meaning that when the existing amount of memory is already full, new allocating memory will be added in numbers of an pre-defined buffer memory, based solely on type.
+ * cstrdatbuf return size (in bytes) of 1 buffer for @_type
+ */
 static inline size_t 
-    cstrdatbuf (cstr_tt _type)
-#if 0
- {	return (_type == CSTR_TYPE0) ? T0_OFF : (_type == CSTR_TYPE1) ? T1_OFF : (_type == CSTR_TYPE2) ? T2_OFF : -1;}
-#endif
+	cstrdatbuf (cstr_tt _type)
  {
-    switch (_type)
-    {
-        case CSTR_TYPE_0:
-            return T0_BUFFER;
-        case CSTR_TYPE_1:
-            return T1_BUFFER;
-        case CSTR_TYPE_2:
-            return T2_BUFFER;
-    }
-    return 0;
+	switch (_type)
+	{
+		case CSTR_TYPE_0:
+			return T0_BUFFER;
+		case CSTR_TYPE_1:
+			return T1_BUFFER;
+		case CSTR_TYPE_2:
+			return T2_BUFFER;
+	}
+	return 0;
 }
 
-/*Data buffer with pointer*/
+/* cstrdatbuf_wp - return data buffer of a &cstr_t
+ * @p:		&cstr_t to test
+ *
+ * return size of a buffer in @p current state
+ */
 static inline size_t 
-    cstrdatbuf_wp (cstr_t p)
- {	return cstrdatbuf(cstrtype(p));}
+	cstrdatbuf_wp (const cstr_const_t p){
+		return cstrdatbuf(cstrtype(p));}
 
-/*Get metadata of p*/
+/* get_meta - get header (or metadata) of a &cstr_t
+ * @p:		&cstr_t to test
+ */
 static inline header_cnt 
-    get_meta (cstr_t p)
+	get_meta (const cstr_const_t p)
  {
-	//char _ptype = cstrtype(p);
-
+	// [NOTE]: This should get a macro implementation
 	header_cnt _return = (header_cnt){
-	//	.h_0 = (head0){0, 0, 0},
-	//	.h_1 = (head1){0, 0, 0},
 		.h_2 = (head2){0, 0, 0}};
-        
+
 	char _ptype;
 	if (p == NULL)
 		return _return;
@@ -315,77 +333,74 @@ static inline header_cnt
 		_ptype = cstrtype(p);
 	switch (_ptype)
 	 {
-#if 0
 		case CSTR_TYPE_0:
-			_return.h_0 = (head1) {cstrstt(p), cstr_bufsize(p), cstr_relsiz(p)};
-			break;
+			_return.h_0 =  *CSTR_HEAD(0, p);
 		case CSTR_TYPE_1:
-			_return.h_1 = (head2) {cstrstt(p), cstr_bufsize(p), cstr_relsiz(p)};
-			break;
+			_return.h_1 =  *CSTR_HEAD(1, p);
 		case CSTR_TYPE_2:
-			_return.h_2 = (head3) {cstrstt(p), cstr_bufsize(p), cstr_relsiz(p)};
-			break;
-#endif
-        case CSTR_TYPE_0:
-            _return.h_0 =  *CSTR_HEAD(0, p);
-        case CSTR_TYPE_1:
-            _return.h_1 =  *CSTR_HEAD(1, p);
-        case CSTR_TYPE_2:
-            _return.h_2 =  *CSTR_HEAD(2, p);
-     }
+			_return.h_2 =  *CSTR_HEAD(2, p);
+	}
 	return _return;
-	//return (HEADER_TYPE) {CSTT(p), CBUFSIZE(p), CRELSIZ(p)};
 }
 
-/*get `header_cnt` header type*/
+
+/* header_type - get header type embedded in union &header_cnt
+ * @h:		&header_cnt to test
+ */
 static inline cstr_tt
-    header_type (header_cnt h)
+	header_type (header_cnt h)
  {
-    uint8_t flag = *((uint8_t*)(&h) + sizeof(h) - 1);    //Since the union type had the size of the largest element
+	uint8_t flag = *((uint8_t*)(&h) + sizeof(h) - 1);    //Since the union type had the size of the largest element
     return (flag & CSTR_TYPE_MASK) >> CSTR_TYPE_BITS;
 }
 
-/*get `bufsize` metadata from header*/
+/* header_bufsize - get @bufsize metadata from header
+ * @h:		&header_cnt to test
+ */
 static inline size_t 
-    header_bufsize (header_cnt h)
+	header_bufsize (header_cnt h)
 {
-    cstr_tt _type   = header_type(h);
-    switch (_type)
-    {
-        case CSTR_TYPE_0:
-            return h.h_0.bufsize;
-        case CSTR_TYPE_1:
-            return h.h_1.bufsize;
-        case CSTR_TYPE_2:
-            return h.h_2.bufsize;
-    }
-    return 0;
-    //return (HEADER_TYPE(header_type(h)))(h).bufsize;
+	cstr_tt _type   = header_type(h);
+	switch (_type)
+	 {
+		case CSTR_TYPE_0:
+			return h.h_0.bufsize;
+		case CSTR_TYPE_1:
+			return h.h_1.bufsize;
+		case CSTR_TYPE_2:
+			return h.h_2.bufsize;
+	}
+	return 0;
 }
 
-/*get `relsiz` metadata from header*/
+/* header_relsiz - get @relsiz metadata from header
+ * @h:		&header_cnt to test
+ */
 static inline size_t
-    header_relsiz (header_cnt h)
-{
-    cstr_tt _type   = header_type(h);
-    switch (_type)
-    {
-        case CSTR_TYPE_0:
-            return h.h_0.relsiz;
-        case CSTR_TYPE_1:
-            return h.h_1.relsiz;
-        case CSTR_TYPE_2:
-            return h.h_2.relsiz;
-    }
-    return 0;
+	header_relsiz (header_cnt h)
+ {
+	cstr_tt _type   = header_type(h);
+	switch (_type)
+	 {
+		case CSTR_TYPE_0:
+			return h.h_0.relsiz;
+		case CSTR_TYPE_1:
+			return h.h_1.relsiz;
+		case CSTR_TYPE_2:
+			return h.h_2.relsiz;
+	}
+	return 0;
 }
 
+/* header_cstrstt - get @cstrstt metadata from header
+ * @h:		&header_cnt to test
+ */
 static inline size_t
 	header_cstrstt(header_cnt h)
-{
+ {
 	cstr_tt _type	= header_type(h);
 	switch (_type)
-	{
+	 {
 		case CSTR_TYPE_0:
 			return h.h_0.cstrstt;
 		case CSTR_TYPE_1:
@@ -396,6 +411,10 @@ static inline size_t
 	return 0;
 }
 
+/* get_header_inf - get selected header metadata
+ * @h:		&header_cnt to get metadata
+ * @_inf:	&HEADER_META enum, specified which metadata to get
+ */
 static inline int
 	get_header_inf (header_cnt h, HEADER_META _inf)
 {
@@ -411,61 +430,65 @@ static inline int
 }
 
 //---------------Assess function------------------------
-//API: get `bufsize` data
-size_t 
-    cstrbuf (cstr_t pc)
- {	return cstr_bufsize(pc);}
+/** [API]
+ * cstrbuf - get numbers of buffer
+ * @p:		&cstr_t to test
+ */
+size_t cstrbuf (const cstr_const_t p) {
+		return cstr_bufsize(p);}
 
-//API: get `relsiz` metadata
-size_t 
-    cstrlen (cstr_t pc)
- {	return cstr_relsiz(pc);}
+/** [API]
+ * cstrlen - get string length in use
+ * @p:		&cstr_t to test
+ */
+size_t cstrlen (const cstr_const_t p) {
+	return cstr_relsiz(p);}
 
-#if 0
+/**
+ * cstr_buffer_size - inner function to get numbers of buffer
+ * @p:		&cstr_t to test
+ */
 static inline size_t 
-    cstr_buffer_size_wt(cstr_tt type)   //Get buffer size, given type
- {	return (type == 1) ? BUFSIZ0 : (type == 2) ? BUFSIZ1 : BUFSIZ2;}
-#endif 
- //#define BUFFSIZ (p) BUFFSIZT(CSTRTYPE(p))
+	cstr_buffer_size(const cstr_const_t p){
+		return cstrdatbuf(cstrtype(p));}
 
-/*Get data buffer with pointer*/
-static inline size_t 
-    cstr_buffer_size(cstr_t p)
- {	return cstrdatbuf(cstrtype(p));}
+/** [API]
+ * cstrrmn - remain size (in bytes) unused
+ * @p:		&cstr_t to test
+ *
+ * Return the remain size (excluding the NULL terminator) allocated but not yet used
+ */
+size_t cstrrmn (const cstr_const_t p){
+		return cstr_bufsize(p) * cstrdatbuf(cstrtype(p)) -  cstr_relsiz(p);}
 
-/*Remain allocated-yet-unused data*/
-size_t 
-    cstrrmn (cstr_t pc)
- {
-     return cstr_bufsize(pc) * cstrdatbuf(cstrtype(pc)) -  cstr_relsiz(pc);}
-
-#if 0
-static inline size_t 
-    cstrdatoff(cstr_tt type)   //Get data offset, give type
- {	return (type == 1) ? T0_OFF : (type == 2) ? T1_OFF : T2_OFF;}
-#endif
-
-/*get type of a hypothetical string consist of _nbytes_ character(s)
-Used mostly in allocate function*/
+/* cstr_typewn - get type of a hypothetical string consist of @nbytes character(s)
+ * @nbytes:	length of string
+ *
+ * Used mostly in allocate function*/
 static inline cstr_tt 
-    cstr_typewn(size_t nbytes)
- {	return  (nbytes <= T0_MAX) ? CSTR_TYPE_0 : (nbytes <= T1_MAX) ? CSTR_TYPE_1 : (nbytes <= T2_MAX) ? CSTR_TYPE_2 : 0;}
+	cstr_typewn(size_t nbytes){
+		return  (nbytes <= T0_MAX) ? CSTR_TYPE_0 : (nbytes <= T1_MAX) ? CSTR_TYPE_1 : (nbytes <= T2_MAX) ? CSTR_TYPE_2 : 0;}
 
-/*get data offset of a hypothetical string consists of _nbytes_ character(s)*/
+/* cstrdatoff_wn - get data offset of hypothetical string consist of @nbytes characters
+ * @nbytes:	length of string
+ */
 static inline size_t 
-    cstrdatoff_wn(size_t nbytes) 
- {	return cstrdatoff(cstr_typewn(nbytes));}
+	cstrdatoff_wn(size_t nbytes) {
+		return cstrdatoff(cstr_typewn(nbytes));}
 
-/*Number of buffer given _nbytes_ character(s) string*/
+/* nof_buffer - get number of buffers are to be allocated in a string 
+ * consist of @nbytes character
+ * @nbytes:	length of string
+ */
 static inline size_t 
-    nof_buffer(size_t nbytes)
+	nof_buffer(size_t nbytes)
  {	
 	cstr_tt _type = cstr_typewn(nbytes);
 	return (size_t)((nbytes + cstrdatoff(_type) + 1) / cstrdatbuf(_type)) + 1;
 }
 
-/*Number of bytes has to allocate for a _nbytes_ character(s) string
-It is divisible by buffer size
+/* shrink_buf - number of bytes to be allocated for a string of @nbytes characters
+ * @nbytes:	length of string
 */
 static inline size_t 
     shrink_buf(size_t nbytes) 
@@ -474,10 +497,11 @@ static inline size_t
 	return (size_t)(nof_buffer(nbytes) * cstrdatbuf(_type));
 }
 
-/*Generate a fresh header for a hypothetical string with _nbytes_ character*/
-
+/* gen_header - fresh header for a string of @nbytes characters
+ * @nbytes:	length of string
+ */
 static header_cnt 
-    gen_header(size_t nbytes)   //Generate header for a fresh string, given number of characters
+	gen_header(size_t nbytes)
  {	
 	char _ptype = cstr_typewn(nbytes);
 	header_cnt _return = (header_cnt){
@@ -505,28 +529,35 @@ static header_cnt
 	return _return;
 }
 
-/*Size of a real header will take*/
+/* sizeof_header - size of header in string metadata
+ * @_header:	&header_cnt to be test
+ */
 static inline size_t 
-    sizeof_header(header_cnt _header)
+	sizeof_header(header_cnt _header)
  {
-    cstr_tt _type = header_type(_header);
-    //return sizeof(HEADER_TYPE(_type));
-    switch (_type)
-    {
-        case CSTR_TYPE_0:
-            return sizeof(HEADER_TYPE(0));
-        case CSTR_TYPE_1:
-            return sizeof(HEADER_TYPE(1));
-        case CSTR_TYPE_2:
-            return sizeof(HEADER_TYPE(2));
-    }
-    return 0;
+	cstr_tt _type = header_type(_header);
+	switch (_type)
+	 {
+		case CSTR_TYPE_0:
+			return sizeof(HEADER_TYPE(0));
+		case CSTR_TYPE_1:
+			return sizeof(HEADER_TYPE(1));
+		case CSTR_TYPE_2:
+			return sizeof(HEADER_TYPE(2));
+	}
+	return 0;
 }
 
-/*Set metadata*/
+/* cstr_setmeta_t - set metadata
+ * @p:			&cstr_t string to be set
+ * @content:	metadat content to set
+ * @_assign:	which metadata to assign
+ *
+ * Assign directly one of metadata value. Internal use
+ * return @content if assign success. else return 0
+ */
 static int 
     cstr_setmeta_t(cstr_t p, size_t content, HEADER_META _assign)
-
 #ifdef __GNUC__
     #ifdef CSTR_DEBUG
     __attribute__((warn_unused_result))
@@ -594,177 +625,207 @@ static int
 	}
  }
 
-/*set `bufsize` metadata*/
+/* cstr_setmeta_bufsize - set @bufsize metadata
+ * @p:		&cstr_tt string to set
+ * @content: value to set
+ *
+ * return @content if assign successfully. else return 0
+ */
 static inline int 
-    cstr_setmeta_bufsize(cstr_t p, size_t content)
- {   
-    return cstr_setmeta_t(p, content, METADATA_BUFSIZE);
-}
+	cstr_setmeta_bufsize(cstr_t p, size_t content){ 
+		return cstr_setmeta_t(p, content, METADATA_BUFSIZE);}
 
-/*set `relsiz` metadata*/
+/* cstr_setmeta_relsiz - set &relsiz metadata
+ * @p:		&cstr_t string to set
+ * @content: value to set
+ *
+ * return @content if assign successfully. else return 0
+ */
 static inline int
-    cstr_setmeta_relsiz(cstr_t p, size_t content)
- {
-    return cstr_setmeta_t(p, content, METADATA_RELSIZ);
-}
+	cstr_setmeta_relsiz(cstr_t p, size_t content) {
+		return cstr_setmeta_t(p, content, METADATA_RELSIZ);}
 
-/*set `cstrstt` metadata*/
+/* cstr_setmeta_stt - set &cstrstt metadata
+ * @p:		&cstr_t string to set
+ * @content: value to set
+ *
+ * return @content if assign successfully. else return 0
+ */
 static inline int
-    cstr_setmeta_stt(cstr_t p, size_t content)
- {
-    return cstr_setmeta_t(p, content, METADATA_CSTRSTT);
-}
+    cstr_setmeta_stt(cstr_t p, size_t content) {
+		return cstr_setmeta_t(p, content, METADATA_CSTRSTT);}
 
-/*set entire metadata*/
+/* set_meta - replace entire metadata
+ * @p:		&cstr_t string to set
+ * @_header: header to set
+ *
+ * return -1 for type0, -2 for type 1 and -3 for type 2
+ * return 0 on failure to recognize type
+ *
+ * [FIXME] Fix return value
+ */
 static int
-    set_meta (header_cnt _header, cstr_t p) //Set metadata of a given 'cstr', return status code
-    /* This must be given 'p' is already allocated*/
+	set_meta (header_cnt _header, cstr_t p)
+	/* This must be given 'p' is already allocated*/
  {
-    cstr_tt _type = header_type(_header);
-    switch (_type)
-    {
-        //[FIXME]: Read compilation error
-        case CSTR_TYPE_0:
+	cstr_tt _type = header_type(_header);
+	switch (_type)
+	 {
+		//[FIXME]: Read compilation error
+		case CSTR_TYPE_0:
+			while(0){}	/* C grammar - 
+						No expression allowed follwing a label */
+			HEADER_TYPE(0)* hhd = (HEADER_TYPE(0)*) 
+				((uint8_t*)(p) - sizeof(HEADER_TYPE(0)));
+			*hhd = _header.h_0;
+			return -1;
+			break;
+		case CSTR_TYPE_1:
 			while(0){}
-            HEADER_TYPE(0)* hhd = (HEADER_TYPE(0)*) 
-                ((uint8_t*)(p) - sizeof(HEADER_TYPE(0)));
-            *hhd = _header.h_0;
-            return -1;
-            break;
-        case CSTR_TYPE_1:
-            while(0){}
 			HEADER_TYPE(1)* hhd_0 = (HEADER_TYPE(1)*)
-                ((uint8_t*)(p) - sizeof(HEADER_TYPE(1)));
-            *hhd_0 = _header.h_1;
-            return -1;
-            break;
-        case CSTR_TYPE_2:
+				((uint8_t*)(p) - sizeof(HEADER_TYPE(1)));
+			*hhd_0 = _header.h_1;
+			return -2;
+			break;
+		case CSTR_TYPE_2:
 			while(0){}
-            HEADER_TYPE(2)* hhd_1 = (HEADER_TYPE(2)*)
-                ((uint8_t*)(p) - sizeof(HEADER_TYPE(2)));
-            *hhd_1 = _header.h_2;
-            return -2;
-            break;
-    }
-    return 0;
-	//HEADER_TYPE(_type)* hnd 	= (HEADER_TYPE(_type)*)
-     //   ((uint8_t*)(p) - sizeof(HEADER_TYPE(_type)));
-    //*hnd    = _header;
+			HEADER_TYPE(2)* hhd_1 = (HEADER_TYPE(2)*)
+				((uint8_t*)(p) - sizeof(HEADER_TYPE(2)));
+			*hhd_1 = _header.h_2;
+			return -3;
+			break;
+	}
+	return 0;
 }
 
 
 //-------------cstr_inf() function family-----------
 //These below function return necessary information provided by struct 'setup_man' for allocation operations
-static setup_man cstr_inf_wp(cstr_t p)
+
+/* cstr_inf_wp - get info for &cstr_t
+ * @p:		&cstr_t to get info
+ *
+ * return &setup_man contain information (duplicate) initialize @p
+ */
+static inline setup_man cstr_inf_wp(const cstr_const_t p)
  {
-    setup_man _return = fresh_sm;
-        /*
-        .nofBlk     = 0,
-        .nof_buffer = 0,
-        .buffer     = 0,
-        .datoff     = 0,
-        ._type      = cstr_type(p)
-        };*/
-    _return._type       = cstrtype(p);
-    _return.nof_buffer  = cstr_bufsize(p);
-    _return.buffer      = cstrdatbuf(_return._type);
-    _return.nofBlk      = _return.nof_buffer * _return.buffer;
-    _return.datoff      = cstrdatoff(_return._type);
-    return _return;
+	setup_man _return = fresh_sm;		//[SUGGEST]: May be removed
+	_return._type       = cstrtype(p);
+	_return.nof_buffer  = cstr_bufsize(p);
+	_return.buffer      = cstrdatbuf(_return._type);
+	_return.nofBlk      = _return.nof_buffer * _return.buffer;
+	_return.datoff      = cstrdatoff(_return._type);
+	return _return;
 }
 
-static setup_man cstr_inf(cstr_tt _type)
+/* cstr_inf - get info for type @_type
+ * @_type:	&cstr_tt to get (type) info
+ *
+ * return &setup_man contain (basic) information for type @_type
+ */
+static inline setup_man cstr_inf(cstr_tt _type)
  {
-     setup_man _return = {
-         .nofBlk        = 0,
-         .nof_buffer    = 0,
-         .buffer        = cstrdatbuf(_type),
-         ._type         = _type,
-         .datoff        = cstrdatoff(_type)
-     };
-     return _return;
-}
-static setup_man cstr_inf_wn(size_t nbytes)
- {
-    setup_man _return   = fresh_sm;
-    cstr_tt _type       = cstr_typewn(nbytes);
-    size_t _buffer      = cstrdatbuf(_type);
-    size_t nof_buffer   = nofbuffer(nbytes);
-    size_t nofBlk       = _buffer * nof_buffer;
-    _return = (setup_man) {
-        ._type      = _type,
-        .buffer     = _buffer,
-        .nof_buffer = nof_buffer,
-        .nofBlk     = nofBlk,
-        .datoff     = cstrdatoff(_type)
-    };
-    return _return;
+	return (setup_man){
+		.nofBlk        = 0,
+		.nof_buffer    = 0,
+		.buffer        = cstrdatbuf(_type),
+		._type         = _type,
+		.datoff        = cstrdatoff(_type)
+	};
 }
 
-static setup_man cstr_inf_wh(header_cnt hcnt)
+/* cstr_inf_wn - get info for a string of @nbytes characters
+ * @nbytes:	length of string
+ *
+ * return &setup_man contain information for (string of) @nbytes characters
+ */
+static inline setup_man cstr_inf_wn(size_t nbytes)
  {
-    //setup_man _return   = fresh_sm;
-    cstr_tt _type       = header_type(hcnt);
-    setup_man _return = (setup_man) {
-        ._type       = _type,
-        .buffer     = cstrdatbuf(_type),
-        .nof_buffer = header_bufsize(hcnt),
-        .nofBlk     = _return.buffer * _return.nof_buffer,
-        .datoff     = cstrdatoff(_type)
-    };
-    return _return;
+	setup_man _return   = fresh_sm;		//[SUGGEST]: May be removed
+	cstr_tt _type       = cstr_typewn(nbytes);
+	size_t _buffer      = cstrdatbuf(_type);
+	size_t nof_buffer   = nofbuffer(nbytes);
+	size_t nofBlk       = _buffer * nof_buffer;
+	_return = (setup_man) {
+		._type      = _type,
+		.buffer     = _buffer,
+		.nof_buffer = nof_buffer,
+		.nofBlk     = nofBlk,
+		.datoff     = cstrdatoff(_type)
+	};
+	return _return;
 }
 
+/* cstr_inf_wh - get info for a string with header @hcnt
+ * @hcnt:	&header_cnt to get info
+ *
+ * return &setup_man contain information (of/for) header @hcnt
+ */
+static inline setup_man cstr_inf_wh(header_cnt hcnt)
+ {
+	//setup_man _return   = fresh_sm;
+	cstr_tt _type       = header_type(hcnt);
+	setup_man _return = (setup_man) {
+		._type       = _type,
+		.buffer     = cstrdatbuf(_type),
+		.nof_buffer = header_bufsize(hcnt),
+		.nofBlk     = _return.buffer * _return.nof_buffer,
+		.datoff     = cstrdatoff(_type)
+	};
+	return _return;
+}
 
-static header_cnt fresh_hdr(setup_man inf)
-{
-    header_cnt _return = {
-        .h_2 = (HEADER_TYPE(2)) {0, 0, 0}
-    };
-    switch (inf._type)
-    {
-        case CSTR_TYPE_0:
-            HEADER_CNT_COMP(0, _return) = (HEADER_TYPE(0)){
-                .cstrstt = inf._type,
-                .bufsize = inf.nof_buffer,
-                .relsiz  = 0
-            };
-            break;
-        case CSTR_TYPE_1:
-            HEADER_CNT_COMP(1, _return) = (HEADER_TYPE(1)){
-                .cstrstt = inf._type,
-                .bufsize = inf.nof_buffer,
-                .relsiz  = 0
-            };
-            break;
-        case CSTR_TYPE_2:
-            HEADER_CNT_COMP(2, _return) = (HEADER_TYPE(2)){
-                .cstrstt = inf._type,
-                .bufsize = inf.nof_buffer,
-                .relsiz  =0
-            };
-            break;
-    }
-    return _return;
-#if 0
-    HEADER_CNT_COMP(inf.type, _return) = {
-        .cstrstt    = inf.type,
-        .bufsize    = inf.nof_buffer,
-        .relsiz     = 0
-    };
-#endif
+/* fresh_hdr - generate fresh header from &setup_man
+ * @inf:	&setup_man to setup
+ *
+ * generate a fresh &header_cnt from @inf
+ */
+static inline header_cnt fresh_hdr(setup_man inf)
+ {
+	header_cnt _return = {
+		.h_2 = (HEADER_TYPE(2)) {0, 0, 0}
+	};
+	switch (inf._type)
+	 {
+		case CSTR_TYPE_0:
+			HEADER_CNT_COMP(0, _return) = (HEADER_TYPE(0)){
+				.cstrstt = inf._type,
+				.bufsize = inf.nof_buffer,
+				.relsiz  = 0
+			};
+			break;
+		case CSTR_TYPE_1:
+			HEADER_CNT_COMP(1, _return) = (HEADER_TYPE(1)){
+				.cstrstt = inf._type,
+				.bufsize = inf.nof_buffer,
+				.relsiz  = 0
+			};
+			break;
+		case CSTR_TYPE_2:
+			HEADER_CNT_COMP(2, _return) = (HEADER_TYPE(2)){
+				.cstrstt = inf._type,
+				.bufsize = inf.nof_buffer,
+				.relsiz  =0
+			};
+			break;
+	}
+	return _return;
 }
 
 //=========================Constructor function==================
-//
 
-/*Create a fresh string with expected _nbytes_ characters*/
+/** [API]
+ * ncstrnew - create a fresh string
+ * @nbytes:	space to allocate
+ *
+ * Generate a new string with enough space to store @nbytes character
+ */
 #ifdef __GNUC__
     __attribute__((warned_unused_result))     
 #endif
 cstr_t ncstrnew(size_t nbytes)
  {
-    setup_man _setup_inf = cstr_inf(nbytes);
+	setup_man _setup_inf = cstr_inf(nbytes);
 	char* _return	= (char*) cstr_malloc(_setup_inf.nofBlk);
 	if (NULL != _return)
 	 {
@@ -772,8 +833,8 @@ cstr_t ncstrnew(size_t nbytes)
 #ifdef CSTR_ZERO_STRING
 		memset(_return, '\0', _setup_inf.nofBlk);
 #endif /*not CSTR_ZERO_STRING*/
-        set_meta(_gened_header, (_return + _setup_inf.datoff));
-        _return[_setup_inf.nofBlk] = '\0';
+		set_meta(_gened_header, (_return + _setup_inf.datoff));
+		_return[_setup_inf.nofBlk] = '\0';
 		return (_return  + _setup_inf.datoff);
 	}
 	else
@@ -783,16 +844,20 @@ cstr_t ncstrnew(size_t nbytes)
 	}
 }
 
-
-/*Create a clonned string from a C literal string*/
+/** [API]
+ * ncstrdup - clone a C literal string
+ * @cc:	C literal string to copy
+ *
+ * Clone a C literal string. ncstrdup() still function if @cc is a &cstr_t, but use ncstrdcpy() if you want a deep copy of a &cstr_t
+ */
 #ifdef __GNUC__
-    __attribute__((warned_unused_result))
+	 __attribute__((warned_unused_result))
 #endif
 cstr_t ncstrdup (const char* cc)
  {
 	size_t nlen	= strlen(cc);
-    setup_man _setup_inf    = cstr_inf(nlen);
-    char* _return  	= (char*) cstr_malloc(sizeof(char) * _setup_inf.nofBlk);
+	setup_man _setup_inf    = cstr_inf(nlen);
+	char* _return  	= (char*) cstr_malloc(sizeof(char) * _setup_inf.nofBlk);
 	if (NULL != _return)
 	 {
 		header_cnt _gened_header 	= gen_header(nlen);
@@ -800,7 +865,7 @@ cstr_t ncstrdup (const char* cc)
 		memset(_return, '\0', _setup_inf.nofBlk,);
 #endif /*not CSTR_ZERO_STRING*/
 		set_meta(_gened_header, (_return + _setup_inf.datoff));
-        _return[_setup_inf.nofBlk] = '\0';
+		_return[_setup_inf.nofBlk] = '\0';
 		memcpy(_return + _setup_inf.datoff, cc, nlen);
 		return (_return + _setup_inf.datoff);
 	}
@@ -811,25 +876,29 @@ cstr_t ncstrdup (const char* cc)
 	}
 }
 
-/*Return a deep copy of pc
+/** [API]
+ * ncstrdcpy - create a deep copy string
+ * @p:	&cstr_t string to cpy
+ *
+ * Create a deep copy of @p.
  * If the result is unused, memory leak will occur*/
 #ifdef __GNUC__
     __attribute__((warned_unused_result))
 #endif
-cstr_t ncstrdcpy(cstr_t pc)
-    /* If the original 'pc' variable are corrupt, if 'CSTR_AUTOEVAL_OFF' is flagged, the new string will be corrupted as well. You may want to introduce a 'CSTR_SAFECLONE' flag to carefully reeval new string's value*/
-{
-	// Nullify function to remove this from deep copy
+cstr_t ncstrdcpy(cstr_t p)
+ {
+	 /* If the original @p is corrupt, if 'CSTR_AUTOEVAL_OFF' is flagged, the new string will be corrupted as well. You may want to introduce a 'CSTR_SAFECLONE' flag to carefully reeval new string's value*/
 
-	if (NULL == pc)
+	// Nullify function to remove this from deep copy
+	if (NULL == p)
 	 {
 		cstr_err("ncstrcdup(): NULL pointer provided", 1);
 		return NULL;
 	}
 #ifndef CSTR_AUTOEVAL_OFF
-	cstr_reeval(pc);
+	cstr_reeval(p);
 #endif  /*CSTR_AUTOEVAL_OFF*/
-	header_cnt _cpy_header 	= get_meta(*pc);
+	header_cnt _cpy_header 	= get_meta(p);
 	size_t relsiz		= get_header_inf(_cpy_header, METADATA_RELSIZ);
 	size_t bufsize		= get_header_inf(_cpy_header, METADATA_BUFSIZE);
 
@@ -869,7 +938,12 @@ cstr_t ncstrdcpy(cstr_t pc)
 	}
 }
 
-/* Move ownership and invalidate src */
+/** [API]
+ * ncstrcdup - move string
+ * @src:	pointer to the source string
+ *
+ * Move ownership (away) from @src
+ * */
 #ifdef __GNUC__
 	__attribute__((warn_unused_result))
 #endif /*not __GNUC__*/
@@ -882,75 +956,87 @@ cstr_t	ncstrcdup(cstr_t* src)
 	return _str;
 }
 
-//[FIXME]
-
-/*Re-evaluate metadata
-Fix data corruption if exist(???)*/
-#ifdef __GNUC__
-    __attribute__((warn_unused_result))
-#endif /*not __GNUC__*/ 
-uint8_t cstr_reeval(cstr_t pc)	    //Re-evaluate metadata, 'bufsize' and 'relsiz'
-
+/** [API]
+ * cstr_reeval - re-evaluate metadata
+ * @p:	string to fix
+ *
+ * Re-calculate all metadata value, compare them with real value within the string
+ * and replace if neccessary
+ * fix data corruption if exist(???)
+ */
+inline void cstr_reeval(cstr_t p)
     /*============WARNING=================
      * This function completely overwrite metadata
      * And since it will search for the '\0' terminator at the address of the string with size of 'relsiz', if 'relsiz' are corrupted, the string are useless for good
      * This is rather expensive to call with big string*/
-
  {
-	if (NULL == pc)
-		return -1;
-
-	//*insert heap memory checking function*
+	if (NULL == p)
+		return;
 #ifdef CSTR_MEMCHECK
-
+	/* heap memory checking function */
 #endif
-	/*
-	size_t relsiz 	= strlen(pc);
-	size_t bufsize	= shrink_buf(relsiz);
-	*/
-#ifdef CSTR_NOMIDDLE_TERM
-    size_t relsiz           = strlen(pc);
-#endif /*not CSTR_NOMIDDLE_TERM*/
-    size_t relsiz           = cstr_relsiz(pc);
-    
-	header_cnt _cpy_header 	= gen_header(strlen(pc));
-	set_meta(_cpy_header, pc);
-	return 0;
+	header_cnt _cpy_header 	= get_meta(p);
+	size_t relsiz		= get_header_inf(_cpy_header, METADATA_RELSIZ);
+	size_t bufsize		= get_header_inf(_cpy_header, METADATA_BUFSIZE);
+
+//Validate header
+	if (p[relsiz] != '\0')
+		relsiz  = strlen(p);
+	setup_man _setup_inf= cstr_inf(relsiz);
+	if (bufsize < _setup_inf.nof_buffer)
+	 {
+		bufsize = _setup_inf.nof_buffer;
+		cstrerr("cstr_reeval(): cstr header corrupted", 1);
+	}
+	if (getinf(_cpy_header, METADATA_CSTRSTT) != cstr_gettype(relsiz))
+	 {
+		cstrerr("cstr_reeval(): cstr header corrupted", 1);
+		setdat_p(&_cpy_header, METADATA_CSTRSTT, cstr_gettype(relsiz));    //function setdat_p() [FIXME]
+	}
+
+	header_cnt _return_header 	= gen_header(relsiz);
+	set_meta(_return_header, p);
 }
 
-/*Free string*/
-/*This function must be called and return value used*/
-#ifdef __GNUC__
-    __attribute__((warned_unused_result))
-#endif 
-cstr_t cstrfree(cstr_t pc)
+/** [API]
+ * cstrfree - free &cstr_t string
+ * @p:	&cstr_t string to free
+ *
+ * This function must be called for each string exist*/
+inline void cstrfree(cstr_t pc)
     /*------------WARNING------------
      * A string freed will have NULL value for the 'char*' pointer
      * This is difference from string with 0 characters or a NULL header*/
  {
 	if (NULL == pc)
-		return NULL;
+		return;
 	cstr_free(cstr_head(pc));
-	pc = NULL;
-	return pc;
 }
 
 //===========STRING MANIPULATION FUNCTION============
 
-/*Write '\0' to all exist memory space of p*/
-uint8_t cstr_voidarr(cstr_t p)
+/* cstr_voidarr - Void all @p memory except the metadata
+ * @p:	string to process
+ *
+ * Overwrite all of @p with '\0' (or the NULL-terminator)
+ */
+static inline void cstr_voidarr(cstr_t p)
  {
-	 //setup_man _setup_inf = cstr_inf(p);
 #ifdef CSTR_AUTOEVAL
 	cstr_reeval(p);
 #endif
 	setup_man _setup_inf = cstr_inf_wp(p);
 	memset(p, '\0', sizeof(char) * _setup_inf.nofBlk);
 	cstr_setmeta_relsiz(p, 0);
-	return 0;
 }
 
-/* Move ownership*/
+/** [API]
+ * cstrcpy - move ownership from @src to @dest
+ * @dest:	pointer to destination string
+ * @src:	pointer to source string
+ *
+ * Move ownership of string hold by *@src
+ */
 char* cstrcpy(cstr_t* dest, cstr_t* src)
 {
 	if (NULL == *src)
@@ -962,25 +1048,33 @@ char* cstrcpy(cstr_t* dest, cstr_t* src)
 	*src		= NULL;
 	return _src;
 }
-/*Destroy all *dest string memory and clone the src string*/
+
+/** [API]
+ * csrtdcpy - made @dest a deep copy of @src
+ * @dest:	pointer to destination string
+ * @src:	source string
+ *
+ * De-initialize *dest and perform deep copy
+ */
 char* cstrdcpy(cstr_t* dest, cstr_t src)
  {
-     if (*dest == src)
-    {
-        cstr_err("cstrcpy(): call to the same string",2);
-        return NULL;
-    }
+	 if (*dest == src)
+	{
+		cstr_err("cstrcpy(): call to the same string",2);
+		return NULL;
+	}
 #ifndef CSTR_AUTOEVAL_OFF
 	cstr_reeval(src);
 #endif /*CSTR_AUTOEVAL_OFF*/
 #ifdef CSTR_SECURITY_WIPE
     cstr_voidarr(*dest);
 #endif /*not CSTR_SECURITY_WIPE*/
+
 	//cstr_t* since the real 'cstr_t' value will be realloc()
 	header_cnt _src_header 	= get_meta(src);
 
-    setup_man _setup_inf= cstr_inf_wh(_src_header);
-    size_t relsiz       = header_relsiz(_src_header);
+	setup_man _setup_inf= cstr_inf_wh(_src_header);
+	size_t relsiz       = header_relsiz(_src_header);
 	char* _alloc		= (char*) cstr_realloc(cstr_head(*dest), _setup_inf.nofBlk);
 	if (NULL == _alloc)
 	 {
@@ -991,14 +1085,18 @@ char* cstrdcpy(cstr_t* dest, cstr_t src)
 #ifdef CSTR_ZERO_STRING
 	memset(_alloc, '\0', _setup_inf.nofBlk);
 #else
-    _alloc[_setup_inf.nofBlk] = '\0';
+	_alloc[_setup_inf.nofBlk] = '\0';
 #endif /*not CSTR_ZERO_STRING*/
 	set_meta(gen_header(relsiz), *dest);
 	memcpy(*dest, src, relsiz * sizeof(char));	//sizeof(char) is rather useless since it is defined by the C standard to be 1 (byte). It just serve coding conventioning purposes
 	return *dest;
 }
 
-/* Copy of C string literal */
+/** [API]
+ * cstrdgcpy - Copy C literal string
+ * @dest:	pointer to destination string
+ * @src:	source C literal
+ */
 char* cstrdgcpy(cstr_t* dest, const char* src)
  {
 	int relsiz		= strlen(src);
@@ -1022,8 +1120,15 @@ char* cstrdgcpy(cstr_t* dest, const char* src)
 	return *dest;
 }
 
-// Move function
-// Resize *src to size nbytes and move to *dest
+/** [API]
+ * cstrncpy - move ownership of a section
+ * @dest:	pointer to destination string
+ * @src:	pointer to source string
+ * @nbytes:	number of (characters) bytes to move
+ *
+ * Resize *@src string to @nbytes and move its ownership to @dest
+ * If nbytes is higher than the real string size, nothing happen. Simply move the whole string
+ */
 char* cstrncpy(cstr_t* dest, cstr_t* src, size_t nbytes)
 {
 #ifdef CSTR_AUTOEVAL_OFF
@@ -1052,7 +1157,14 @@ char* cstrncpy(cstr_t* dest, cstr_t* src, size_t nbytes)
 	return _return;
 }
 
-// Deep copy limited amount of 'cstr_t' string
+/** [API] 
+ * cstrndcpy - deep copy a section of string
+ * @dest:	pointer to destination string
+ * @src:	source string
+ * @nbytes:	number of (characters) bytes to move
+ *
+ * deep copy @nbytes characters of @src to @dest
+ */
 char* cstrndcpy(cstr_t * dest, cstr_t src, size_t nbytes)
  {
 #ifdef CSTR_AUTOEVAL_OFF
@@ -1083,7 +1195,12 @@ char* cstrndcpy(cstr_t * dest, cstr_t src, size_t nbytes)
 	return *dest;
 }
 
-// Deep copy a limit amount of C literal string
+/** [API]
+ * cstrndgcpy - copy a section of C literal string
+ * @dest:	pointer to destination string
+ * @src:	source C literal string
+ * @nbytes:	number of bytes to copy
+ */
 char* cstrndgcpy(cstr_t* dest, const char* src, size_t nbytes)
  {
 	size_t nbytes_eff	= nbytes;
@@ -1111,7 +1228,14 @@ char* cstrndgcpy(cstr_t* dest, const char* src, size_t nbytes)
 	return *dest;
 }
 
-char* cstrcat(cstr_t* dest, cstr_t src)   //Append 'src' to 'dest'
+/** [API]
+ * cstrcat - append string
+ * @dest:	destination string
+ * @src:	source append string
+ *
+ * Append (and enlarge, if neccessary) @src to the end of @dest
+ */
+char* cstrcat(cstr_t* dest, cstr_t src)
 {
 #ifndef CSTR_AUTOEVAL_OFF
 	cstr_reeval(src);
@@ -1143,7 +1267,14 @@ char* cstrcat(cstr_t* dest, cstr_t src)   //Append 'src' to 'dest'
 	return *dest;
 }
 
-char*  cstrgcat(cstr_t* dest, const char* src)// Append 'src' to 'dest'
+/** [API]
+ * cstrgcat - append C literal string
+ * @dest:	pointer to destination string
+ * @src:	source C literal string
+ *
+ * Append @src to the end of @dest
+ */
+char*  cstrgcat(cstr_t* dest, const char* src)
  {
 #ifndef CSTR_AUTOEVAL_OFF
 	cstr_reeval(*dest);
@@ -1174,7 +1305,15 @@ char*  cstrgcat(cstr_t* dest, const char* src)// Append 'src' to 'dest'
 	return *dest;
 }
 
-char* cstrncat(cstr_t* dest, cstr_t src, size_t nbytes)//Append 'src' to 'dest' with limited number of bytes
+/** [API]
+ * cstrncat - (not really) safe append string
+ * @dest:	pointer to destination string
+ * @src:	pointer to source string
+ * @nbytes:	number of bytes to append
+ *
+ * Append @nbytes characters of @src to @dest
+ */
+char* cstrncat(cstr_t* dest, cstr_t src, size_t nbytes)
  {
 #ifndef CSTR_AUTOEVAL_OFF
 	cstr_reeval(*dest);
@@ -1202,7 +1341,15 @@ char* cstrncat(cstr_t* dest, cstr_t src, size_t nbytes)//Append 'src' to 'dest' 
 	return *dest;
 }
 
-char* cstrngcat(cstr_t* dest, const char* src, size_t nbytes)//Append 'src' to 'dest' with limited number of bytes
+/** [API]
+ * cstrngcat - (not really) safe C literal string append
+ * @dest:	pointer to destination string
+ * @src:	source C literal string
+ * @nbytes:	number of bytes to append
+ *
+ * Append @nbytes characters of @src to @dest
+ */
+char* cstrngcat(cstr_t* dest, const char* src, size_t nbytes)
  {
 #ifndef CSTR_AUTOEVAL_OFF
 	cstr_reeval(*dest);

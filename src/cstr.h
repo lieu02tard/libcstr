@@ -31,57 +31,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
  * * Store the size of character until the '\0' terminator
  * * This is rather relaxed
  * ==============================================================EOF======
- * 
- *
- * ==============>>>>>METADATA MANIPULATION FUNCTION<<<<<<<<<<<===========
- * uint8_t cstrstt(cstr_t)		
- * 				: Return cstrstt variable
- * uint8_t cstr_isnull(cstr_t)	
- * 				: Check if string is NULL, 0-sized
- * uint8_t* cstr_head(cstr_t)	
- * 				: Return position of the metadata head
- * uint8_t* cstr_tail(cstr_t)
- * 				: Return position of the '\0'
- * cstr_tt cstrtype(cstr_t)
- * 				: Type of p
- * uint16_t cstr_bufsize(cstr_t)
- * 				: 'bufsize' value
- * size_t cstr_bufsize_s(cstr_t)
- * 				: 'bufsize' size
- * uint32_t cstr_relsiz(cstr_t) 
- * 				: 'relsiz' value
- * size_t cstr_relsiz_s(cstr_t) 
- * 				: 'relsiz' size
- * size_t cstrdatoff(cstr_t)
- * 				: cstr data offset (aka size of the header)
- * size_t cstrdatoff_wn(size_t) 
- * 				: cstr data offset with given number of characters
- * header_cnt get_meta(cstr_t)
- * 				: Get header_cnt-structured metadata
- * cstr_buffer_size(cstr_t)	
- * 				: Get buffer size
- * cstr_buffer_size_wt(cstr_tt) 
- * 				: Get buffer size for type
- * cstr_buffer_size_wn(size_t)
- * 				: Get buffer size with given number of characters
- * size_t cstrrmn (cstr_t pc)
- * 				: Get remain block of 'char' unused 
- * cstr_tt cstr_typewn (size_t nbytes)
- * 				: Get type with given number of characters
- * size_t nof_buffer(size_t nbytes)
- * 				: Get number of buffers for given number of characters
- * size_t shrink_buf(size_t nbytes)
- * 				: Get number of character to be allocated to fit the buffer size with given number of characters in use
- * header_cnt gen_header(size_t nbytes)
- * 				: Get fresh header created for string of nbytes characters
- * size_t sizeof_header(header_cnt)
- * 				: Get size of metadata 
- * char* cstr_setmeta(header_cnt, cstr_t)
- * 				: Set metadata for a given string
- * size_t get_header_inf(header_cnt, HEADER_INFTYPE)
- * 				: Get information from header struct
- *
- *
  * */
 #ifndef FLIB_CSTR_H
 #define FLIB_CSTR_H
@@ -98,7 +47,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #endif /* not CSTR_SECURITY_WIPE*/
 
 typedef char* cstr_t;
-
+typedef const char* cstr_const_t;
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -179,35 +128,18 @@ char*	cstrncat (cstr_t* dest, cstr_t src, size_t nbytes);
 char* 	cstrngcat (cstr_t* dest, const char* src, size_t nbytes);
 
 
-uint8_t	cstr_reeval (cstr_t);
+inline void	cstr_reeval (cstr_t);
 
 //Free
-cstr_t	cstrfree (cstr_t);
+inline void	cstrfree (cstr_t);
 
 //Examination
 //
 //Assess
-size_t 	cstrbuf (cstr_t);	//Buffer in state
-size_t	cstrlen (cstr_t);	//Length in use by string
-size_t	cstrrmn (cstr_t);	//Remain size
-/*
-int 	cstrcasecmp (cstr_t, cstr_t);		//Compare ignoring case
-int 	cstrncasecmp (cstr_t, cstr_t, size_t);	//Compare by certain number of characters ignoring case
-char* 	index (cstr_t s, char c);		//Return a pointer to the first occurance of character c in string s
-char* 	rindex (cstr_t s, char c);		//Return a pointer to the last occurance of character c in string s
-*/
-/*
-int 	cstrcmp (cstr_t, cstr_t);		//Compare
-int 	cstrncmpr (cstr_t, cstr_t, int);	//Compare by certain number of characters
-size_t	cstrcspn (cstr_t s, cstr_t reject);	//Calculate the length of initial segement in string s which does not contain any of bytes in the string reject
+size_t 	cstrbuf (const cstr_const_t);	//Buffer in state
+size_t	cstrlen (const cstr_const_t);	//Length in use by string
+size_t	cstrrmn (const cstr_const_t);	//Remain size
 
-//Token related
-char* 	cstrstr (cstr_t haystack, cstr_t needle);
-char* 	cstrgstr (cstr_t haystack, const char * needle);
-
-char* 	cstrtok (cstr_t s, cstr_t delim);
-char* 	cstrgtok (cstr_t s, const char* delim);
-*/
 #ifdef __cplusplus
 }
 #endif
