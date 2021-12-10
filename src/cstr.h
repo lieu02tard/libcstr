@@ -52,6 +52,7 @@ typedef const char* cstr_const_t;
 extern "C" {
 #endif
 
+#ifndef CSTR_ONLY_TYPE
 typedef uint8_t cstr_s;
 
 typedef struct
@@ -101,6 +102,8 @@ typedef enum {
 	CSTR_TYPE1	= 0x02,
 	CSTR_TYPE2	= 0x03
 } cstr_tt;
+
+#ifndef CSTR_ONLY_STRUCT
 //Generate
 cstr_t	ncstrmt();
 cstr_t 	ncstrnew (size_t);
@@ -139,9 +142,9 @@ inline void	cstrfree (cstr_t);
 size_t 	cstrbuf (const cstr_const_t);	//Buffer in state
 size_t	cstrlen (const cstr_const_t);	//Length in use by string
 size_t	cstrrmn (const cstr_const_t);	//Remain size
-
+#endif /* not CSTR_ONLY_STRUCT */
 #ifdef __cplusplus
 }
 #endif
-
-#endif
+#endif /* not CSTR_TYPE_ONLY */
+#endif /* not FLIB_CSTR_H */
