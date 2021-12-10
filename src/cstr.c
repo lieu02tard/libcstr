@@ -926,7 +926,7 @@ cstr_t ncstrdcpy(cstr_t p)
 		memset(_return, '\0', sizeof(char) * relsiz);//[FIXME] Is this wise enough to zero all of memory
 #endif /*not CSTR_ZERO_STRING*/
 		set_meta(_cpy_header, (_return + _inf.datoff));
-		memcpy(_return + _inf.datoff, pc, relsiz);
+		memcpy(_return + _inf.datoff, p, relsiz);
 		_return[relsiz] = '\0';
 		return (_return + _inf.datoff);
 	}
