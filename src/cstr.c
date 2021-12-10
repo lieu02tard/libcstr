@@ -46,8 +46,7 @@ typedef struct {
     size_t datoff;          //Data header offset
 } setup_man;
 
-#define fresh_sm (setup_man)\
-    fresh_sm = {\
+#define fresh_sm (setup_man) {\
     .nofBlk     = 0,\
     .nof_buffer = 0,\
     .buffer     = 0,\
