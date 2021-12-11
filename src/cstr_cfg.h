@@ -1,7 +1,7 @@
 #ifndef CSTR_CONFIG_H
 #define CSTR_CONFIG_H
 #ifdef CSTR_GENERAL_TEMPLATE
-
+#define CSTR_DEBUG
 #ifndef CSTR_ALTMEM     //Alternate memory library other than libc
 #define CSTR_LIBC_ALLOC
 #include <stdlib.h>
@@ -14,7 +14,7 @@
 #ifndef CSTR_CUSTOMIZED_DEF //Use customized settings, not in <cstr_cfg.h>
 #define CSTR_VERBAL         //Print (fatal) error, mostly indicate memory corruption
 #include <stdio.h>
-//#define CSTR_DEBUG        //Print debug message. Only use in test programm
+#define CSTR_DEBUG        //Print debug message. Only use in test programm
 #ifndef CSTR_VERBAL_MODULE_NAME
     #define CSTR_VERBAL_MODULE_NAME "cstr"
 #endif /*CSTR_VERBAL_MODULE_NAME*/

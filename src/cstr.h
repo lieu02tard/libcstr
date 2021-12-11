@@ -36,12 +36,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #define FLIB_CSTR_H
 
 #include "cstr_cfg.h"
-#include <string.h>
 #include <stdint.h>
-#ifdef CSTR_VERBAL
-	#include <stdio.h>
-#endif /*CSTR_VERBAL*/
-
+#include <stddef.h>
 #ifdef CSTR_SECURITY_WIPE
     #define CSTR_ZERO_STRING
 #endif /* not CSTR_SECURITY_WIPE*/
@@ -57,7 +53,7 @@ typedef uint8_t cstr_s;
 
 typedef struct
 {
-	uint8_t	bufsize;
+	uint8_t	nofbuf;
 	uint8_t relsiz;
     cstr_s cstrstt;
 } head0;
@@ -69,7 +65,7 @@ typedef struct
 
 typedef struct
 {
-	uint8_t bufsize;
+	uint8_t nofbuf;
 	uint16_t relsiz;
     cstr_s cstrstt;
 } head1;
@@ -81,7 +77,7 @@ typedef struct
 
 typedef struct
 {
-	uint16_t bufsize;
+	uint16_t nofbuf;
 	uint32_t relsiz;
     cstr_s cstrstt;
 } head2;
@@ -131,17 +127,17 @@ char*	cstrncat (cstr_t* dest, cstr_t src, size_t nbytes);
 char* 	cstrngcat (cstr_t* dest, const char* src, size_t nbytes);
 
 
-inline void	cstr_reeval (cstr_t);
+void	cstr_reeval (cstr_t);
 
 //Free
-inline void	cstrfree (cstr_t);
+void	cstrfree (cstr_t);
 
 //Examination
 //
 //Assess
-size_t 	cstrbuf (const cstr_const_t);	//Buffer in state
-size_t	cstrlen (const cstr_const_t);	//Length in use by string
-size_t	cstrrmn (const cstr_const_t);	//Remain size
+size_t 	cstrbuf (const cstr_const_t);	//Number of bufers allocated
+size_t	cstrlen(const cstr_const_t);		//Length in use by string
+size_t	cstrrmn (const cstr_const_t);		//Remain size
 #endif /* not CSTR_ONLY_STRUCT */
 #ifdef __cplusplus
 }
