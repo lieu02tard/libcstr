@@ -4,9 +4,9 @@ SHELL	:=/usr/bin/bash
 CC		:=gcc
 CCX		:=g++
 # C flags
-CFLAGS	:=-Wall -O2
+CFLAGS	:=-Wall
 # CPP flags
-CXXFLAGS:=-Wall -O2
+CXXFLAGS:=-Wall
 # Output flags
 OFLAGS	:=-o
 # Assemble flag (but not link)
@@ -31,9 +31,9 @@ DEB_DIR	:=$(BUILD)/debug
 OBJ_DIR	:=$(BUILD)/obj
 
 # Include flags
-INC		:=-I .
+INC		:=-I ..
 # Soruce files directory
-SRC_DIR	:= .
+SRC_DIR	:= ..
 SRCS	:=$(shell find $(SRC_DIR) -name '*.cpp' -or -name '*.c')
 
 # Object and external object file
@@ -59,12 +59,17 @@ $(OBJ_DIR)/%.c.o: %.c
 $(APP_DIR)/$(TARGET): $(OBJ)
 		$(CC) $(CFLAGS) $(OFLAGS) $(APP_DIR)/$(TARGET) $^ $(LDFLAGS)
 
-.PHONY: all build debug execute clean
+.PHONY: all build debug execute clean release
 build:
 		@mkdir -p $(APP_DIR)
 		@mkdir -p $(OBJ_DIR)
 
-debug: NFLAGS+=-g
+release: CFLAGS+=-O2
+release: CXXFLAGS+=-O2
+release: all
+
+debug: CFLAGS+=-g
+debug: CXXFLAGS+=-g
 debug: all
 
 execute :all

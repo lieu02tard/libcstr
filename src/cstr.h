@@ -14,33 +14,46 @@ GNU General Public License for more details.
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 *
 */
-/*>>>>>>>>>>>>DEVELOPER MANUAL<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+/**
  * ===================STRUCTURE===========================================
- * _____________________________________________________
- * |cstrstt|bufsize    |relsiz     |char[] array
- * |1 bytes|1-2 byte(s)|2-4 byte(s)|
- * |_______|___________|___________|___________________
- * 				   |-> cstr_t variable point here
- * cstrstt : 
- * * Bits 6 & 7 store the type of header
- * * If these bits equal to 0, the string is nullified
- * bufsize :
- * * Store the size of buffer block allocated
- * * aka the real size allocated are BUFSIZ<type> * bufsize * sizeof(char)
- * relsiz :
- * * Store the size of character until the '\0' terminator
- * * This is rather relaxed
+ * _______________________________
+ * |            |                 |
+ * | Header     |  char array     |
+ * |____________|_________________|
+ *              |-> cstr_t pointer return to the developer
+ *
  * ==============================================================EOF======
  * */
 #ifndef FLIB_CSTR_H
 #define FLIB_CSTR_H
 
-#include "cstr_cfg.h"
+
 #include <stdint.h>
 #include <stddef.h>
-#ifdef CSTR_SECURITY_WIPE
-    #define CSTR_ZERO_STRING
-#endif /* not CSTR_SECURITY_WIPE*/
+
+#ifndef BUFSIZ
+	#define BUFSIZ 8192
+#endif
+
+#ifndef CSTR_MALLOC
+	#define CSTR_MALLOC malloc
+#endif
+
+#ifndef CSTR_CALLOC
+	#define CSTR_CALLOC calloc
+#endif
+
+#ifndef CSTR_REALLOC
+	#define CSTR_REALLOC realloc
+#endif
+
+#ifndef CST_FREE
+	#define CSTR_FREE free
+#endif
+
+#ifdef __LP64__
+	#define HAVE_64_BITS
+#endif
 
 typedef char* cstr_t;
 typedef const char* cstr_const_t;
@@ -48,99 +61,160 @@ typedef const char* cstr_const_t;
 extern "C" {
 #endif
 
-#ifndef CSTR_ONLY_TYPE
-typedef uint8_t cstr_s;
 
-typedef struct
-{
-	uint8_t	nofbuf;
+struct head0 {
+	uint8_t nofbuf;
 	uint8_t relsiz;
-    cstr_s cstrstt;
-} head0;
-//#define T0_OFF 	3
+	uint8_t flag;
+};
 #define T0_MAX	0xFF	//Max type0 capacity, equals 2**8 - 1
 #ifndef T0_BUFFER
     #define T0_BUFFER 0x10
 #endif
 
-typedef struct
-{
-	uint8_t nofbuf;
+struct head1 {
+	uint16_t nofbuf;
 	uint16_t relsiz;
-    cstr_s cstrstt;
-} head1;
-//#define T1_OFF 4
+	uint16_t flag;
+};
+
 #define T1_MAX 0xFF	//Max typ1 capacity, equals 2**16 -1
 #ifndef T1_BUFFER 
     #define T1_BUFFER 0x400
 #endif
 
-typedef struct
-{
-	uint16_t nofbuf;
+struct head2 {
+	uint32_t nofbuf;
 	uint32_t relsiz;
-    cstr_s cstrstt;
-} head2;
-//#define T2_OFF 7
+	uint32_t flag;
+};
+
 #define T2_MAX 0xFFFFFFFF      //Max typ2 capacity, equals 2**32 -1
 #ifndef T2_BUFFER
     #define T2_BUFFER 0x1000
 #endif
-typedef union
-{
-	head0 h_0;
-	head1 h_1;
-	head2 h_2;
-} header_cnt;
 
-typedef enum {
-	CSTR_TYPE0	= 0x01,
-	CSTR_TYPE1	= 0x02,
-	CSTR_TYPE2	= 0x03
-} cstr_tt;
+#ifdef  HAVE_64_BITS
+struct head3 {
+	uint64_t nofbuf;
+	uint64_t relsiz;
+	uint64_t flag;
+};
 
-#ifndef CSTR_ONLY_STRUCT
-//Generate
-cstr_t	ncstrmt();
-cstr_t 	ncstrnew (size_t);
-cstr_t 	ncstrdup (const char*);
-cstr_t	ncstrdcpy (cstr_t);				// Deep copy
-cstr_t 	ncstrcdup (cstr_t*);			// Shallow copy and invalidate old string
-cstr_t	nfcstrdup(const char*, ...);	// Format string
-//Manipulation
+#define T3_MAX 0x10000000
+#ifndef T3_BUFFER
+	#define T3_BUFFER 0x1000000
+#endif
+
+#endif 
+
+enum cstr_tt {
+	CSTR_TYPE_INVALID = 0x00,
+	CSTR_TYPE_0 = 0x01,
+	CSTR_TYPE_1 = 0x02,
+	CSTR_TYPE_2 = 0x03
+#ifdef HAVE_64_BITS
+	, CSTR_TYPE_3 = 0x04
+#endif
+};
+
+#ifdef HAVE_64_BITS
+typedef struct head3 header_cnt;
+#else
+typedef struct head2 header_cnt;
+#endif
+
+typedef intmax_t cstr_wrapper;
+// Generate
+extern cstr_t ncstr_mt();
+extern cstr_t ncstr_new (size_t);
+extern cstr_t ncstr_from (const char*);
+extern cstr_t ncstrcpy (cstr_t);				// Deep copy
+extern cstr_t ncstrdup (cstr_t*);			// Shallow copy and invalidate old string
+
+/*
+// Manipulation
 //
-//Append
+// Overwrite
+extern char* cstrcpy (cstr_t* dest, cstr_t* src);				// Transfer ownership
+extern char* cstrdcpy (cstr_t* dest, cstr_t src);			// Deep copy
+extern char* cstrdgcpy (cstr_t* dest, const char* src);
 
-char*	cstrcpy(cstr_t* dest, cstr_t* src);				// Transfer ownership
-char*	cstrdcpy (cstr_t* dest, cstr_t src);			// Deep copy
-char* 	cstrdgcpy (cstr_t* dest, const char* src);
+extern char* cstrncpy(cstr_t* dest, cstr_t* src, size_t nbytes);				// Transfer ownership
+extern char* cstrndcpy (cstr_t* dest, cstr_t src, size_t nbytes);			// Deep copy
+extern char* cstrndgcpy (cstr_t* dest, const char* src, size_t nbytes);
 
-char*	cstrncpy(cstr_t* dest, cstr_t* src, size_t nbytes);				// Transfer ownership
-char* 	cstrndcpy (cstr_t* dest, cstr_t src, size_t nbytes);			// Deep copy
-char* 	cstrndgcpy (cstr_t* dest, const char* src, size_t nbytes);
+// Append
+extern char* cstrcat (cstr_t* dest, cstr_t src);
+extern char* cstrgcat (cstr_t* dest, const char* src);
 
-
-char*	cstrcat (cstr_t* dest, cstr_t src);
-char*	cstrgcat (cstr_t* dest, const char* src);
-
-char*	cstrncat (cstr_t* dest, cstr_t src, size_t nbytes);
-char* 	cstrngcat (cstr_t* dest, const char* src, size_t nbytes);
-
-
-void	cstr_reeval (cstr_t);
+extern char* cstrncat (cstr_t* dest, cstr_t src, size_t nbytes);
+extern char* cstrngcat (cstr_t* dest, const char* src, size_t nbytes);
+*/
+// Adjust
+extern void cstr_resize(cstr_t*, size_t capacity);
+extern void	cstr_trim(cstr_t*);
 
 //Free
-void	cstrfree (cstr_t);
+extern inline void	cstr_free (cstr_t);
 
 //Examination
 //
 //Assess
-size_t 	cstrbuf (const cstr_const_t);	//Number of bufers allocated
-size_t	cstrlen(const cstr_const_t);		//Length in use by string
-size_t	cstrrmn (const cstr_const_t);		//Remain size
-#endif /* not CSTR_ONLY_STRUCT */
+extern inline size_t cstr_buf (const cstr_const_t);		//Number of bufers allocated
+extern inline size_t cstr_len(const cstr_const_t);		//Length in use by string
+extern inline size_t cstr_rmn (const cstr_const_t);		//Remain size
+extern inline void cstr_reeval(const cstr_const_t);
+
+/** 
+ * Inner function
+ * These function are used when several infomation are presented
+ * Not recommend to use directly
+ */
+
+struct alloc_man {
+	cstr_wrapper nofbuf;	// Number of allocated
+	cstr_wrapper relsiz;	// Real size of string
+	cstr_wrapper nofblk;	// Real size to alloc
+	cstr_wrapper flag;		// Flag variable
+	cstr_wrapper datoff;	// Header offset
+	enum cstr_tt type;			// Type
+};
+
+#define __CSTR_TYPE_MASK 0x03
+extern inline void __cstr_debug(const char* title, const char* content, int code);
+
+extern inline enum cstr_tt __cstr_type(const cstr_const_t);
+extern inline void* __cstr_head(const cstr_const_t, enum cstr_tt);
+extern inline enum cstr_tt __cstr_type_wn(size_t);
+
+extern inline cstr_wrapper __cstr_nofbuf(const cstr_const_t, enum cstr_tt);
+extern inline cstr_wrapper __cstr_relsiz(const cstr_const_t, enum cstr_tt);
+extern inline cstr_wrapper __cstr_flag(const cstr_const_t, enum cstr_tt);
+extern inline void __cstr_set_nofbuf(const cstr_const_t, cstr_wrapper, enum cstr_tt);
+extern inline void __cstr_set_relsiz(const cstr_const_t, cstr_wrapper, enum cstr_tt);
+extern inline void __cstr_set_flag(const cstr_const_t, cstr_wrapper, enum cstr_tt);
+
+extern inline cstr_wrapper __cstr_datoff(enum cstr_tt);
+extern inline cstr_wrapper __cstr_datoff_wn(size_t);
+
+extern inline cstr_wrapper __cstr_datbuf(enum cstr_tt);
+extern inline cstr_wrapper __cstr_datbuf_wn(size_t);
+
+extern inline header_cnt __cstr_header_from(void*, enum cstr_tt);
+extern inline header_cnt __cstr_header(const cstr_const_t, enum cstr_tt);
+
+extern inline struct alloc_man __cstr_getman(size_t);
+extern inline struct alloc_man __cstr_getman_wp(const cstr_const_t, enum cstr_tt);
+extern inline struct alloc_man __cstr_getman_wh(header_cnt, enum cstr_tt);
+extern inline void* __cstr_set_header(void*, struct alloc_man, enum cstr_tt);
+extern inline void* __cstr_set_header_wh(void*, header_cnt, enum cstr_tt);
+
+extern inline cstr_wrapper __cstr_toflag(enum cstr_tt);
+extern inline enum cstr_tt __cstr_from_flag(cstr_wrapper);
+extern inline cstr_wrapper __cstr_nof_buffer(size_t, enum cstr_tt);
+extern inline cstr_wrapper __cstr_nof_buffer_alone(size_t);
 #ifdef __cplusplus
 }
 #endif
-#endif /* not CSTR_TYPE_ONLY */
-#endif /* not FLIB_CSTR_H */
+#endif
