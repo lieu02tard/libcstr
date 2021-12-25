@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-inline void print_title(const char* title)
+inline void __cstr_print_title(const char* title)
 {
 	fputs(c_blue, stdout);
 	putc('[', stdout);
@@ -16,9 +16,9 @@ inline void print_title(const char* title)
 	fputs(": ", stdout);
 }
 
-inline void print_debug(const char* title, const char* content)
+inline void __cstr_print_debug(const char* title, const char* content)
 {
-	print_title(title);
+	__cstr_print_title(title);
 	puts(content);
 	putc('\n', stdout);
 }

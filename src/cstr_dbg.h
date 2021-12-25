@@ -8,5 +8,5 @@ static const char* c_magenta = "\033[;35m";
 static const char* c_cyan = "\033[;36m";
 static const char* c_reset = "\033[0m";
 
-extern inline void print_debug(const char* title, const char* content);
-extern inline void print_title(const char* title);
+extern inline void __cstr_print_debug(const char* title, const char* content);
+extern inline void __cstr_print_title(const char* title);
