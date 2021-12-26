@@ -1,6 +1,7 @@
 #define CSTR_DEBUG
 #include <cstr.h>
 #include <cstr_utility.h>
+#include <wcstr.h>
 
 #include <stdio.h>
 int main(int argc, const char* argv[])
