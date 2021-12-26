@@ -133,13 +133,14 @@ typedef struct head2 header_cnt;
 #endif
 
 typedef intmax_t wcstr_wrapper;
+typedef int wcstr_lower;
 
 struct alloc_man {
-	wcstr_wrapper nofbuf;
-	wcstr_wrapper relsiz;
-	wcstr_wrapper nofblk;
-	wcstr_wrapper flag;
-	wcstr_wrapper datoff;
+	wcstr_wrapper	relsiz;
+	wcstr_wrapper	nofblk;
+	wcstr_lower		nofbuf;
+	wcstr_lower		flag;
+	wcstr_lower		datoff;
 	enum wcstr_tt type;
 };
 #endif /* __get_struct */
