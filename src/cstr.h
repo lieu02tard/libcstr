@@ -67,7 +67,7 @@ struct head0 {
 	uint8_t relsiz;
 	uint8_t flag;
 };
-#define T0_MAX	0xFF	//Max type0 capacity, equals 2**8 - 1
+#define T0_MAX	(uint8_t)(-1)
 #ifndef T0_BUFFER
     #define T0_BUFFER 0x10
 #endif
@@ -78,7 +78,7 @@ struct head1 {
 	uint16_t flag;
 };
 
-#define T1_MAX 0xFF	//Max typ1 capacity, equals 2**16 -1
+#define T1_MAX (uint16_t)(-1)
 #ifndef T1_BUFFER 
     #define T1_BUFFER 0x400
 #endif
@@ -89,7 +89,7 @@ struct head2 {
 	uint32_t flag;
 };
 
-#define T2_MAX 0xFFFFFFFF      //Max typ2 capacity, equals 2**32 -1
+#define T2_MAX (uint32_t)(-1)
 #ifndef T2_BUFFER
     #define T2_BUFFER 0x1000
 #endif
@@ -101,7 +101,7 @@ struct head3 {
 	uint64_t flag;
 };
 
-#define T3_MAX 0x10000000
+#define T3_MAX (uint64_t)(-1)
 #ifndef T3_BUFFER
 	#define T3_BUFFER 0x1000000
 #endif
