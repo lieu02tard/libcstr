@@ -197,6 +197,7 @@ extern inline wcstr_wrapper __wcstr_datoff_wn(size_t);
 extern inline wcstr_wrapper __wcstr_datbuf(enum wcstr_tt);
 extern inline wcstr_wrapper __wcstr_datbuf_wn(size_t);
 
+extern inline void* __wcstr_head(const wcstr_const_t p, enum wcstr_tt type);
 extern inline header_cnt __wcstr_header_from(void*, enum wcstr_tt);
 extern inline header_cnt __wcstr_header(const wcstr_const_t, enum wcstr_tt);
 

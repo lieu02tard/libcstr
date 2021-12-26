@@ -10,7 +10,7 @@
 #endif
 
 #define MIN(a, b) ((a < b) ? a : b)
-WCHAR_TYPE* cstrcpy(wcstr_t *dest, wcstr_t *src)
+WCHAR_TYPE* wcstrcpy(wcstr_t *dest, wcstr_t *src)
 {
 	if (dest == src || *dest == *src)
 		return NULL;
@@ -20,7 +20,7 @@ WCHAR_TYPE* cstrcpy(wcstr_t *dest, wcstr_t *src)
 	return *dest;
 }
 
-WCHAR_TYPE* cstrdcpy(wcstr_t* dest, wcstr_t src)
+WCHAR_TYPE* wcstrdcpy(wcstr_t* dest, const wcstr_const_t src)
 {
 	if (*dest == src)
 		return NULL;
@@ -28,7 +28,7 @@ WCHAR_TYPE* cstrdcpy(wcstr_t* dest, wcstr_t src)
 	return *dest;
 }
 
-WCHAR_TYPE* cstrdgcpy(wcstr_t* dest, const WCHAR_TYPE* src)
+WCHAR_TYPE* wcstrdgcpy(wcstr_t* dest, const WCHAR_TYPE* src)
 {
 	if (*dest == src)
 		return NULL;
@@ -36,7 +36,7 @@ WCHAR_TYPE* cstrdgcpy(wcstr_t* dest, const WCHAR_TYPE* src)
 	return *dest;
 }
 
-WCHAR_TYPE* cstrncpy(wcstr_t *dest, wcstr_t* src, size_t nbytes)
+WCHAR_TYPE* wcstrncpy(wcstr_t *dest, wcstr_t* src, size_t nbytes)
 {
 	if (*dest == *src || dest == src)
 		return NULL;
@@ -47,7 +47,7 @@ WCHAR_TYPE* cstrncpy(wcstr_t *dest, wcstr_t* src, size_t nbytes)
 	return *dest;
 }
 
-WCHAR_TYPE* cstrndcpy(wcstr_t *dest, const WCHAR_TYPE* src, size_t nbytes)
+WCHAR_TYPE* wcstrndcpy(wcstr_t *dest, const WCHAR_TYPE* src, size_t nbytes)
 {
 	if (*dest == src)
 		return NULL;
@@ -55,7 +55,7 @@ WCHAR_TYPE* cstrndcpy(wcstr_t *dest, const WCHAR_TYPE* src, size_t nbytes)
 	return *dest;
 }
 
-WCHAR_TYPE* cstrndgcpy(wcstr_t *dest, const WCHAR_TYPE* src, size_t nbytes)
+WCHAR_TYPE* wcstrndgcpy(wcstr_t *dest, const WCHAR_TYPE* src, size_t nbytes)
 {
 	if (*dest == src)
 		return NULL;
@@ -63,7 +63,7 @@ WCHAR_TYPE* cstrndgcpy(wcstr_t *dest, const WCHAR_TYPE* src, size_t nbytes)
 	return *dest;
 }
 
-WCHAR_TYPE* cstrcat(wcstr_t *dest, wcstr_t src)
+WCHAR_TYPE* wcstrcat(wcstr_t *dest, const wcstr_const_t src)
 {
 	if (!*dest)
 	{
@@ -82,7 +82,7 @@ WCHAR_TYPE* cstrcat(wcstr_t *dest, wcstr_t src)
 	return *dest;
 }
 
-WCHAR_TYPE* cstrgcat(wcstr_t *dest, const WCHAR_TYPE* src)
+WCHAR_TYPE* wcstrgcat(wcstr_t *dest, const WCHAR_TYPE* src)
 {
 	if (!*dest)
 	{
@@ -102,7 +102,7 @@ WCHAR_TYPE* cstrgcat(wcstr_t *dest, const WCHAR_TYPE* src)
 	return *dest;
 }
 
-WCHAR_TYPE* cstrncat(wcstr_t *dest, wcstr_t src, size_t nbytes)
+WCHAR_TYPE* wcstrncat(wcstr_t *dest, const wcstr_const_t src, size_t nbytes)
 {
 	wcstr_wrapper src_len = wcsnlen(src, BUFSIZ);
 	wcstr_wrapper isrc_len = MIN(nbytes, src_len);
@@ -121,7 +121,7 @@ WCHAR_TYPE* cstrncat(wcstr_t *dest, wcstr_t src, size_t nbytes)
 	return *dest;
 }
 
-WCHAR_TYPE* cstrngcat(wcstr_t *dest, const char* src, size_t nbytes)
+WCHAR_TYPE* wcstrngcat(wcstr_t *dest, const WCHAR_TYPE* src, size_t nbytes)
 {
 	wcstr_wrapper src_len = wcsnlen(src, BUFSIZ);
 	wcstr_wrapper isrc_len = MIN(nbytes, src_len);

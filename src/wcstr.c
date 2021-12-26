@@ -46,7 +46,7 @@ inline enum wcstr_tt __wcstr_type_wn(size_t n)
 #endif
 }
 
-inline wcstr_wrapper __cstr_nofbuf(const wcstr_const_t p, enum wcstr_tt type)
+inline wcstr_wrapper __wcstr_nofbuf(const wcstr_const_t p, enum wcstr_tt type)
 {
 	switch (type)
 	{
@@ -84,7 +84,7 @@ inline wcstr_wrapper __wcstr_relsiz(const wcstr_const_t p, enum wcstr_tt type)
 	}
 }
 
-inline wcstr_wrapper __cstr_flag(const wcstr_const_t p, enum wcstr_tt type)
+inline wcstr_wrapper __wcstr_flag(const wcstr_const_t p, enum wcstr_tt type)
 {
 	switch (type)
 	{
@@ -434,7 +434,7 @@ wcstr_t nwcstr_mt()
 }
 
 __attribute__((warn_unused_result))
-wcstr_t ncstr_new(size_t nbytes)
+wcstr_t nwcstr_new(size_t nbytes)
 {
 	struct alloc_man man = __wcstr_getman(nbytes);
 	WCHAR_TYPE* _alloc = (WCHAR_TYPE*) CSTR_MALLOC(man.nofblk * sizeof(WCHAR_TYPE));
