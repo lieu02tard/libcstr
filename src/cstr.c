@@ -478,7 +478,7 @@ cstr_t ncstrcpy(cstr_t p)
 		__cstr_debug("ncstrcpy", "Allocation failure", 2);
 }
 
-__attribute__((always_inline))
+__attribute__((warn_unused_result))
 cstr_t ncstrdup(cstr_t* p)
 {
 	cstr_t _return = *p;
@@ -573,7 +573,7 @@ void cstr_trim(cstr_t* p)
 		return;
 	enum cstr_tt otype = __cstr_type(*p);
 	struct alloc_man man = __cstr_getman(__cstr_relsiz(*p, otype));
-	if (man.nofbuf == __cstr_nofbuf(p, otype))
+	if (man.nofbuf == __cstr_nofbuf(*p, otype))
 		return;
 	if (otype == man.type)
 	{
