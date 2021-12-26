@@ -1,5 +1,10 @@
+#ifndef _CSTR_UTILITY_H_
+#define _CSTR_UTILITY_H_
 #include "cstr.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 // Manipulation function
 //
 // Overwrite
@@ -17,3 +22,7 @@ extern char* cstrgcat(cstr_t *dest, const char* src);
 
 extern char* cstrncat(cstr_t *dest, cstr_t src, size_t nbytes);
 extern char* cstrngcat(cstr_t *dest, const char* src, size_t nbytes);
+#ifdef __cplusplus
+}
+#endif
+#endif
