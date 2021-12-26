@@ -61,7 +61,11 @@ typedef const char* cstr_const_t;
 extern "C" {
 #endif
 
-
+	// Define __need_struct to get access to inner struct and
+	// Define __need_cstr_inner_func  (must have __need_struct defined) to get access to inner function
+#ifdef __need_struct
+#ifndef __get_struct
+#define __get_struct
 struct head0 {
 	uint8_t nofbuf;
 	uint8_t relsiz;
@@ -125,6 +129,18 @@ typedef struct head2 header_cnt;
 #endif
 
 typedef intmax_t cstr_wrapper;
+
+struct alloc_man {
+	cstr_wrapper nofbuf;
+	cstr_wrapper relsiz;
+	cstr_wrapper nofblk;
+	cstr_wrapper flag;
+	cstr_wrapper datoff;
+	enum cstr_tt type;
+};
+#endif /* __get_struct */
+#endif /* __need_struct */
+
 // Generate
 extern cstr_t ncstr_mt();
 extern cstr_t ncstr_new (size_t);
@@ -153,14 +169,9 @@ extern inline void cstr_reeval(const cstr_const_t);
  * Not recommend to use directly
  */
 
-struct alloc_man {
-	cstr_wrapper nofbuf;	// Number of allocated
-	cstr_wrapper relsiz;	// Real size of string
-	cstr_wrapper nofblk;	// Real size to alloc
-	cstr_wrapper flag;		// Flag variable
-	cstr_wrapper datoff;	// Header offset
-	enum cstr_tt type;			// Type
-};
+#if defined __get_struct && defined __need_cstr_inner_func
+#ifndef __get_cstr_inner_func
+#define __get_cstr_inner_func
 
 #define __CSTR_TYPE_MASK 0x03
 extern inline void __cstr_debug(const char* title, const char* content, int code);
@@ -197,7 +208,12 @@ extern inline cstr_wrapper __cstr_nof_buffer(size_t, enum cstr_tt);
 extern inline cstr_wrapper __cstr_nof_buffer_alone(size_t);
 
 extern void __cstr_resize_from(cstr_t* p, const char* src, size_t cap, int create);
+
+#endif /* __get_cstr_inner_func */
+#endif
+
 #ifdef __cplusplus
 }
 #endif
+
 #endif

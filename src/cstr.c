@@ -1,3 +1,5 @@
+#define __need_struct
+#define __need_cstr_inner_func
 #include "cstr.h"
 
 #include <stdlib.h>
@@ -469,9 +471,7 @@ cstr_t ncstrcpy(cstr_t p)
 	uint8_t* _alloc = (uint8_t*) CSTR_MALLOC(man.nofblk * sizeof(char));
 	if (_alloc)
 	{
-	//	memcpy(_alloc, __cstr_head(p, __cstr_type(p)), man.nofblk);
-		char* head = __cstr_head(p, __cstr_type(p));
-		memcpy(_alloc, head, man.nofblk);
+		memcpy(_alloc, __cstr_head(p, __cstr_type(p)), man.nofblk);
 		return (char*)_alloc + man.datoff;
 	}
 	else
