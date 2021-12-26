@@ -7,7 +7,7 @@
 	#include "cstr_dbg.h"
 #endif
 
-#define MIN(a, b) ((a > b) ? a : b)
+#define MIN(a, b) ((a < b) ? a : b)
 char* cstrcpy(cstr_t *dest, cstr_t *src)
 {
 	if (dest == src || *dest == *src)
@@ -96,14 +96,14 @@ char* cstrgcat(cstr_t *dest, const char* src)
 	cstr_wrapper dest_len = __cstr_relsiz(*dest, __cstr_type(*dest));
 	__cstr_resize_from(dest, NULL, dest_len + src_len, 1);
 	memcpy(*dest + dest_len, src, src_len);
-	*dest[dest_len + src_len - 1] = '\0';
+	(*dest)[dest_len + src_len - 1] = '\0';
 	return *dest;
 }
 
 char* cstrncat(cstr_t *dest, cstr_t src, size_t nbytes)
 {
-//	cstr_wrapper src_len = strnlen(src, BUFSIZ);
-	cstr_wrapper isrc_len = MIN(nbytes, __cstr_relsiz(src, __cstr_type(src)));
+	cstr_wrapper src_len = strnlen(src, BUFSIZ);
+	cstr_wrapper isrc_len = MIN(nbytes, src_len);
 	if (!isrc_len)
 		return *dest;
 	if (!*dest)
@@ -115,13 +115,14 @@ char* cstrncat(cstr_t *dest, cstr_t src, size_t nbytes)
 	cstr_wrapper dest_len = __cstr_relsiz(*dest, __cstr_type(*dest));
 	__cstr_resize_from(dest, NULL, dest_len + isrc_len, 1);
 	memcpy(*dest + dest_len , src, isrc_len);
-	*dest[dest_len + isrc_len - 1] = '\0';
+	(*dest)[dest_len + isrc_len - 1] = '\0';
 	return *dest;
 }
 
 char* cstrngcat(cstr_t *dest, const char* src, size_t nbytes)
 {
-	cstr_wrapper isrc_len = MIN(nbytes, strnlen(src, BUFSIZ));
+	cstr_wrapper src_len = strnlen(src, BUFSIZ);
+	cstr_wrapper isrc_len = MIN(nbytes, src_len);
 	if (!isrc_len)
 		return *dest;
 	if (!*dest)
@@ -133,6 +134,6 @@ char* cstrngcat(cstr_t *dest, const char* src, size_t nbytes)
 	cstr_wrapper dest_len = __cstr_relsiz(*dest, __cstr_type(*dest));
 	__cstr_resize_from(dest, NULL, dest_len + isrc_len, 1);
 	memcpy(*dest + dest_len, src, isrc_len);
-	*dest[dest_len + isrc_len - 1] = '\0';
+	(*dest)[dest_len + isrc_len - 1] = '\0';
 	return *dest;
 }

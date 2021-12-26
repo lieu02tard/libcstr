@@ -271,7 +271,7 @@ inline struct alloc_man __cstr_getman_wp(const cstr_const_t p, enum cstr_tt type
 		.datoff = __cstr_datoff(type),
 		.type = type
 	};
-	_return.nofblk	= _return.nofbuf * __cstr_datoff(type) + _return.datoff;
+	_return.nofblk	= _return.nofbuf * __cstr_datbuf(type) + _return.datoff;
 	return _return;
 }
 
@@ -284,7 +284,7 @@ inline struct alloc_man __cstr_getman_wh(header_cnt head, enum cstr_tt type)
 		.type = type,
 		.datoff = __cstr_datoff(type)
 	};
-	_return.nofblk = _return.nofbuf * __cstr_datoff(type) + _return.datoff;
+	_return.nofblk = _return.nofbuf * __cstr_datbuf(type) + _return.datoff;
 	return _return;
 }
 
@@ -469,7 +469,9 @@ cstr_t ncstrcpy(cstr_t p)
 	uint8_t* _alloc = (uint8_t*) CSTR_MALLOC(man.nofblk * sizeof(char));
 	if (_alloc)
 	{
-		memcpy(_alloc, p, man.nofblk);
+	//	memcpy(_alloc, __cstr_head(p, __cstr_type(p)), man.nofblk);
+		char* head = __cstr_head(p, __cstr_type(p));
+		memcpy(_alloc, head, man.nofblk);
 		return (char*)_alloc + man.datoff;
 	}
 	else
