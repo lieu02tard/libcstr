@@ -59,22 +59,27 @@ $(OBJ_DIR)/%.c.o: %.c
 $(APP_DIR)/$(TARGET): $(OBJ)
 		$(CC) $(CFLAGS) $(OFLAGS) $(APP_DIR)/$(TARGET) $^ $(LDFLAGS)
 
-.PHONY: all build debug execute clean release
+.PHONY: all build debug execute clean release test
 build:
 		@mkdir -p $(APP_DIR)
 		@mkdir -p $(OBJ_DIR)
 
-release: CFLAGS+=-O2
-release: CXXFLAGS+=-O2
-release: all
+release	: CFLAGS+=-O2
+release	: CXXFLAGS+=-O2
+release	: all
 
-debug: CFLAGS+=-g
-debug: CXXFLAGS+=-g
-debug: all
+debug	: CFLAGS+=-g
+debug	: CXXFLAGS+=-g
+debug	: all
 
 execute :all
 execute	:
 		setsid $(APP_DIR)/$(TARGET)
+
+test	: debug
+test	: all
+test	: 
+		valgrind -s --track-origin=yes --leak-check=full -show-leak-kinds=all $(APP_DIR)/$(TARGET)
 
 clean:
 		-@rm -rf $(BUILD)
