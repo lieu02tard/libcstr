@@ -12,30 +12,6 @@
 
 /* -----------Inner function------------*/
 
-/**
- * __cstr_debug - Print debug message
- * @title:		Title literal
- * @content:	Content literal
- * @code:		(Exit) code
- *
- * Print formatted debug message to stdout. If @code is not 0, exit program with return code @code
- * Only work if CSTR_DEBUG is turned on
- */
-#ifdef CSTR_DEBUG
-inline void __cstr_debug(const char* title, const char* content, int code)
-{
-	__cstr_print_debug(title, content);
-	if (code)
-		exit(code);
-}
-#else
-inline void __cstr_debug(const char* title, const char* content, int code)
-{
-	if (code)
-		exit(code);
-}
-#endif
-
 inline enum cstr_tt __cstr_type(const cstr_const_t p)
 {
 	return *((uint8_t*)(p) - 1) & __CSTR_TYPE_MASK;
@@ -508,21 +484,61 @@ cstr_t ncstrdup(cstr_t* p)
 	return _return;
 }
 
-void cstr_resize(cstr_t* p, size_t capacity)
+/**
+ * __cstr_resize_from - Resize and move string
+ * @p:		Pointer to &cstr_t string
+ * @src:	Source string
+ * @capacity: Length to move
+ * @create:	Whether to create a new string if *@p is NULL
+ *
+ * Resize @*p to a @capacity. If @src is not NULL, then copy @capacity characters from @src to @*p
+ * *@p might be changed with realloc()
+ */
+void __cstr_resize_from(cstr_t* p, const char* src, size_t capacity, int create)
 {
 	if (!p)
 		return;
-	enum cstr_tt otype = __cstr_type(*p);
-	if (otype == capacity)
+	if (*p == NULL && create)
+	{
+		struct alloc_man man = __cstr_getman(capacity);
+		uint8_t* _alloc = (uint8_t*) CSTR_MALLOC(man.nofblk);
+		if (!_alloc)
+			__cstr_debug("cstr_resize","Allocation failed", 2);
+		*p = __cstr_set_header(_alloc, man, man.type);
+		if (src)
+			memcpy(*p, src, capacity);
+		_alloc[man.nofblk - 1] = '\0';
 		return;
+	}
+	else if (*p == NULL)
+		return;
+
+	enum cstr_tt otype = __cstr_type(*p);
+	if (__cstr_relsiz(*p, otype) == capacity)
+	{
+		size_t real_len = (src) ? strnlen(src, BUFSIZ) : capacity;
+		if (src)
+			memcpy(*p, src, real_len);
+		__cstr_set_relsiz(*p, real_len, otype);
+		*p[capacity - 1] = '\0';
+		return;
+	}
+
+	void* head = __cstr_head(*p, otype);
 	struct alloc_man man = __cstr_getman(capacity);
 	if (otype == man.type)
 	{
-		uint8_t* _alloc = (uint8_t*) CSTR_REALLOC(*p, man.nofblk);
+		uint8_t* _alloc = (uint8_t*) CSTR_REALLOC(head, man.nofblk);
 		if (!_alloc)
 			__cstr_debug("cstr_resize", "Allocation failed", 2);
 		_alloc[man.nofblk - 1] = '\0';
-		*p = (char*)_alloc + man.datoff;
+		*p = __cstr_set_header(_alloc, man, man.type);
+		if (src)
+		{
+			size_t tmp = strnlen(src, BUFSIZ);
+			memcpy(*p, src, tmp);
+			__cstr_set_relsiz(*p, tmp, man.type);
+		}
 		return;
 	}
 	else
@@ -530,12 +546,23 @@ void cstr_resize(cstr_t* p, size_t capacity)
 		uint8_t* _alloc = (uint8_t*) CSTR_REALLOC(*p, man.nofblk);
 		if (!_alloc)
 			__cstr_debug("cstr_resize", "Allocation failed", 2);
-		memmove(_alloc + __cstr_datoff(otype), _alloc + man.datoff, man.relsiz);
+		*p = __cstr_set_header(_alloc, man, man.type);
+		if (src)
+		{
+			size_t tmp = strnlen(src, BUFSIZ);
+			memcpy(*p, src, tmp);
+			__cstr_set_relsiz(*p, tmp, man.type);
+		}
+		else
+			memmove(_alloc + __cstr_datoff(otype), _alloc + man.datoff, man.relsiz);
 		_alloc[man.nofblk - 1] = '\0';	
-		__cstr_set_header(_alloc, man, man.type);
-		*p = (char*)_alloc + man.datoff;
 		return;
 	}
+}
+
+void cstr_resize(cstr_t *p, size_t capacity)
+{
+	__cstr_resize_from(p, NULL, capacity, 0);
 }
 
 void cstr_trim(cstr_t* p)

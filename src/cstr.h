@@ -128,29 +128,10 @@ typedef intmax_t cstr_wrapper;
 // Generate
 extern cstr_t ncstr_mt();
 extern cstr_t ncstr_new (size_t);
-extern cstr_t ncstr_from (const char*);
-extern cstr_t ncstrcpy (cstr_t);				// Deep copy
-extern cstr_t ncstrdup (cstr_t*);			// Shallow copy and invalidate old string
+extern cstr_t ncstr_from (const char*);		// From literal
+extern cstr_t ncstrcpy (cstr_t);			// Deep copy
+extern cstr_t ncstrdup (cstr_t*);			// Transfer ownership
 
-/*
-// Manipulation
-//
-// Overwrite
-extern char* cstrcpy (cstr_t* dest, cstr_t* src);				// Transfer ownership
-extern char* cstrdcpy (cstr_t* dest, cstr_t src);			// Deep copy
-extern char* cstrdgcpy (cstr_t* dest, const char* src);
-
-extern char* cstrncpy(cstr_t* dest, cstr_t* src, size_t nbytes);				// Transfer ownership
-extern char* cstrndcpy (cstr_t* dest, cstr_t src, size_t nbytes);			// Deep copy
-extern char* cstrndgcpy (cstr_t* dest, const char* src, size_t nbytes);
-
-// Append
-extern char* cstrcat (cstr_t* dest, cstr_t src);
-extern char* cstrgcat (cstr_t* dest, const char* src);
-
-extern char* cstrncat (cstr_t* dest, cstr_t src, size_t nbytes);
-extern char* cstrngcat (cstr_t* dest, const char* src, size_t nbytes);
-*/
 // Adjust
 extern void cstr_resize(cstr_t*, size_t capacity);
 extern void	cstr_trim(cstr_t*);
@@ -214,6 +195,8 @@ extern inline cstr_wrapper __cstr_toflag(enum cstr_tt);
 extern inline enum cstr_tt __cstr_from_flag(cstr_wrapper);
 extern inline cstr_wrapper __cstr_nof_buffer(size_t, enum cstr_tt);
 extern inline cstr_wrapper __cstr_nof_buffer_alone(size_t);
+
+extern void __cstr_resize_from(cstr_t* p, const char* src, size_t cap, int create);
 #ifdef __cplusplus
 }
 #endif
