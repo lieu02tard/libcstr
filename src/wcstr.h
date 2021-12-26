@@ -184,18 +184,18 @@ extern inline enum wcstr_tt __wcstr_type(const wcstr_const_t);
 extern inline void* __cstr_head(const wcstr_const_t, enum wcstr_tt);
 extern inline enum wcstr_tt __wcstr_type_wn(size_t);
 
-extern inline wcstr_wrapper __wcstr_nofbuf(const wcstr_const_t, enum wcstr_tt);
+extern inline wcstr_lower __wcstr_nofbuf(const wcstr_const_t, enum wcstr_tt);
 extern inline wcstr_wrapper __wcstr_relsiz(const wcstr_const_t, enum wcstr_tt);
-extern inline wcstr_wrapper __wcstr_flag(const wcstr_const_t, enum wcstr_tt);
-extern inline void __wcstr_set_nofbuf(const wcstr_const_t, wcstr_wrapper, enum wcstr_tt);
+extern inline wcstr_lower __wcstr_flag(const wcstr_const_t, enum wcstr_tt);
+extern inline void __wcstr_set_nofbuf(const wcstr_const_t, wcstr_lower, enum wcstr_tt);
 extern inline void __wcstr_set_relsiz(const wcstr_const_t, wcstr_wrapper, enum wcstr_tt);
-extern inline void __wcstr_set_flag(const wcstr_const_t, wcstr_wrapper, enum wcstr_tt);
+extern inline void __wcstr_set_flag(const wcstr_const_t, wcstr_lower, enum wcstr_tt);
 
-extern inline wcstr_wrapper __wcstr_datoff(enum wcstr_tt);
-extern inline wcstr_wrapper __wcstr_datoff_wn(size_t);
+extern inline wcstr_lower __wcstr_datoff(enum wcstr_tt);
+extern inline wcstr_lower __wcstr_datoff_wn(size_t);
 
-extern inline wcstr_wrapper __wcstr_datbuf(enum wcstr_tt);
-extern inline wcstr_wrapper __wcstr_datbuf_wn(size_t);
+extern inline wcstr_lower __wcstr_datbuf(enum wcstr_tt);
+extern inline wcstr_lower __wcstr_datbuf_wn(size_t);
 
 extern inline void* __wcstr_head(const wcstr_const_t p, enum wcstr_tt type);
 extern inline header_cnt __wcstr_header_from(void*, enum wcstr_tt);
@@ -207,10 +207,10 @@ extern inline struct alloc_man __wcstr_getman_wh(header_cnt, enum wcstr_tt);
 extern inline void* __wcstr_set_header(void*, struct alloc_man, enum wcstr_tt);
 extern inline void* __wcstr_set_header_wh(void*, header_cnt, enum wcstr_tt);
 
-extern inline wcstr_wrapper __wcstr_toflag(enum wcstr_tt);
-extern inline enum wcstr_tt __wcstr_from_flag(wcstr_wrapper);
-extern inline wcstr_wrapper __wcstr_nof_buffer(size_t, enum wcstr_tt);
-extern inline wcstr_wrapper __wcstr_nof_buffer_alone(size_t);
+extern inline wcstr_lower __wcstr_toflag(enum wcstr_tt);
+extern inline enum wcstr_tt __wcstr_from_flag(wcstr_lower);
+extern inline wcstr_lower __wcstr_nof_buffer(size_t, enum wcstr_tt);
+extern inline wcstr_lower __wcstr_nof_buffer_alone(size_t);
 
 extern void __wcstr_resize_from(wcstr_t* p, const WCHAR_TYPE* src, size_t cap, int create);
 #endif /* __get_wcstr_inner_func */

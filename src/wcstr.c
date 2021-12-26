@@ -46,7 +46,7 @@ inline enum wcstr_tt __wcstr_type_wn(size_t n)
 #endif
 }
 
-inline wcstr_wrapper __wcstr_nofbuf(const wcstr_const_t p, enum wcstr_tt type)
+inline wcstr_lower __wcstr_nofbuf(const wcstr_const_t p, enum wcstr_tt type)
 {
 	switch (type)
 	{
@@ -84,7 +84,7 @@ inline wcstr_wrapper __wcstr_relsiz(const wcstr_const_t p, enum wcstr_tt type)
 	}
 }
 
-inline wcstr_wrapper __wcstr_flag(const wcstr_const_t p, enum wcstr_tt type)
+inline wcstr_lower __wcstr_flag(const wcstr_const_t p, enum wcstr_tt type)
 {
 	switch (type)
 	{
@@ -103,7 +103,7 @@ inline wcstr_wrapper __wcstr_flag(const wcstr_const_t p, enum wcstr_tt type)
 	}
 }
 
-inline wcstr_wrapper __wcstr_datoff(enum wcstr_tt type)
+inline wcstr_lower __wcstr_datoff(enum wcstr_tt type)
 {
 	switch (type)
 	{
@@ -122,12 +122,12 @@ inline wcstr_wrapper __wcstr_datoff(enum wcstr_tt type)
 	}
 }
 
-inline wcstr_wrapper __wcstr_datoff_wn(size_t nbytes)
+inline wcstr_lower __wcstr_datoff_wn(size_t nbytes)
 {
 	return __wcstr_datoff(__wcstr_type_wn(nbytes));
 }
 
-inline wcstr_wrapper __wcstr_datbuf(enum wcstr_tt type)
+inline wcstr_lower __wcstr_datbuf(enum wcstr_tt type)
 {
 	switch (type)
 	{
@@ -146,12 +146,12 @@ inline wcstr_wrapper __wcstr_datbuf(enum wcstr_tt type)
 	}
 }
 
-inline wcstr_wrapper __cstr_datbuf_wn(size_t nbytes)
+inline wcstr_lower __wcstr_datbuf_wn(size_t nbytes)
 {
 	return __wcstr_datbuf(__wcstr_type_wn(nbytes));
 }
 
-inline void __wcstr_set_nofbuf(const wcstr_const_t p, wcstr_wrapper val, enum wcstr_tt type)
+inline void __wcstr_set_nofbuf(const wcstr_const_t p, wcstr_lower val, enum wcstr_tt type)
 {
 	switch (type)
 	{
@@ -370,26 +370,26 @@ inline void* __wcstr_set_header_wh(void* p, header_cnt head, enum wcstr_tt type)
 	}
 }
 
-inline wcstr_wrapper __wcstr_toflag(enum wcstr_tt type)
+inline wcstr_lower __wcstr_toflag(enum wcstr_tt type)
 {
-	wcstr_wrapper tmp = 0;
+	wcstr_lower tmp = 0;
 	uint8_t* ret = (uint8_t*)&tmp + sizeof(tmp) - 1;
 	*ret = type;
 	return tmp;
 }
 
-inline enum wcstr_tt __wcstr_from_flag(wcstr_wrapper flag)
+inline enum wcstr_tt __wcstr_from_flag(wcstr_lower flag)
 {
 	uint8_t* ret = (uint8_t*)&flag + sizeof(flag) - 1;
 	return *ret;
 }
 
-inline wcstr_wrapper __wcstr_nof_buffer(size_t nbytes, enum wcstr_tt type)
+inline wcstr_lower __wcstr_nof_buffer(size_t nbytes, enum wcstr_tt type)
 {
 	return nbytes/__wcstr_datbuf(type) + 1;
 }
 
-inline wcstr_wrapper __wcstr_nof_buffer_alone(size_t nbytes)
+inline wcstr_lower __wcstr_nof_buffer_alone(size_t nbytes)
 {
 	return __wcstr_nof_buffer(nbytes, __wcstr_type_wn(nbytes));
 }

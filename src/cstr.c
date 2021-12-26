@@ -1,7 +1,7 @@
 #define __need_struct
 #define __need_cstr_inner_func
 #include "cstr.h"
-
+#define CSTR_DEBUG
 #include <stdlib.h>
 #ifdef CSTR_DEBUG
 	#include <stdio.h>
@@ -45,7 +45,7 @@ inline enum cstr_tt __cstr_type_wn(size_t n)
 #endif
 }
 
-inline cstr_wrapper __cstr_nofbuf(const cstr_const_t p, enum cstr_tt type)
+inline cstr_lower __cstr_nofbuf(const cstr_const_t p, enum cstr_tt type)
 {
 	switch (type)
 	{
@@ -83,7 +83,7 @@ inline cstr_wrapper __cstr_relsiz(const cstr_const_t p, enum cstr_tt type)
 	}
 }
 
-inline cstr_wrapper __cstr_flag(const cstr_const_t p, enum cstr_tt type)
+inline cstr_lower __cstr_flag(const cstr_const_t p, enum cstr_tt type)
 {
 	switch (type)
 	{
@@ -102,7 +102,7 @@ inline cstr_wrapper __cstr_flag(const cstr_const_t p, enum cstr_tt type)
 	}
 }
 
-inline cstr_wrapper __cstr_datoff(enum cstr_tt type)
+inline cstr_lower __cstr_datoff(enum cstr_tt type)
 {
 	switch (type)
 	{
@@ -121,12 +121,12 @@ inline cstr_wrapper __cstr_datoff(enum cstr_tt type)
 	}
 }
 
-inline cstr_wrapper __cstr_datoff_wn(size_t nbytes)
+inline cstr_lower __cstr_datoff_wn(size_t nbytes)
 {
 	return __cstr_datoff(__cstr_type_wn(nbytes));
 }
 
-inline cstr_wrapper __cstr_datbuf(enum cstr_tt type)
+inline cstr_lower __cstr_datbuf(enum cstr_tt type)
 {
 	switch (type)
 	{
@@ -145,12 +145,12 @@ inline cstr_wrapper __cstr_datbuf(enum cstr_tt type)
 	}
 }
 
-inline cstr_wrapper __cstr_datbuf_wn(size_t nbytes)
+inline cstr_lower __cstr_datbuf_wn(size_t nbytes)
 {
 	return __cstr_datbuf(__cstr_type_wn(nbytes));
 }
 
-inline void __cstr_set_nofbuf(const cstr_const_t p, cstr_wrapper val, enum cstr_tt type)
+inline void __cstr_set_nofbuf(const cstr_const_t p, cstr_lower val, enum cstr_tt type)
 {
 	switch (type)
 	{
@@ -369,26 +369,26 @@ inline void* __cstr_set_header_wh(void* p, header_cnt head, enum cstr_tt type)
 	}
 }
 
-inline cstr_wrapper __cstr_toflag(enum cstr_tt type)
+inline cstr_lower __cstr_toflag(enum cstr_tt type)
 {
-	cstr_wrapper tmp = 0;
+	cstr_lower tmp = 0;
 	uint8_t* ret = (uint8_t*)&tmp + sizeof(tmp) - 1;
 	*ret = type;
 	return tmp;
 }
 
-inline enum cstr_tt __cstr_from_flag(cstr_wrapper flag)
+inline enum cstr_tt __cstr_from_flag(cstr_lower flag)
 {
 	uint8_t* ret = (uint8_t*)&flag + sizeof(flag) - 1;
 	return *ret;
 }
 
-inline cstr_wrapper __cstr_nof_buffer(size_t nbytes, enum cstr_tt type)
+inline cstr_lower __cstr_nof_buffer(size_t nbytes, enum cstr_tt type)
 {
 	return nbytes/__cstr_datbuf(type) + 1;
 }
 
-inline cstr_wrapper __cstr_nof_buffer_alone(size_t nbytes)
+inline cstr_lower __cstr_nof_buffer_alone(size_t nbytes)
 {
 	return __cstr_nof_buffer(nbytes, __cstr_type_wn(nbytes));
 }
