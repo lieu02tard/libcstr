@@ -3,12 +3,11 @@
 * [Inspiration](`#Inspiration`)
 * [Features](`#Features`)
 * [Structure](`#Structure`)
-* [Usage](`#Usage`)
 * [API](`#API`)
 * [Contribution](`#Contribution`)
 
 ## Introduction
-`libcstr` is a library to manage C-style null-terminated string. It is written as a part of `FFABC`'s argument parsing library, `fparg`. 
+`libcstr` is a library to manage C-style null-terminated string. 
 `libcstr` is released under GPL license (v3 or later).
 
 ## Inspiration
@@ -32,18 +31,6 @@ This library take many idea ~~and code~~ from [sds](https://github.com/antirez/s
 
 As of `sds` and `stricks` library, metadata are stored in a header whose location right before pointer return to developer. Every string allocated are terminate with a '\0', no matter whether the real content include a '\0'.
 
-## Usage
 
-### Generate a new string
-`libcstr` provided 4 function: `ncstrnew()`, `ncstrdup()`, `ncstrgdup()` and `nfcstrdup()`.
-```cpp
-    cstr_t s;
-    s = ncstrnew(12);
-    //or
-    s0 = ncstrdup(s);
-    //or
-    s1 = ncstrgdup("Never gonna give you up\n");
-    //or even better
-    s2 = nfcstrdup("%s version %s", "libcstr", "0.0.1");
-
-```
+## API
+For more informations, checkout [API.md](API.md)
