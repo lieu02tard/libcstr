@@ -597,3 +597,17 @@ void cstr_trim(cstr_t* p)
 	}
 }
 
+#ifdef __get_write_enum
+
+void* __cstr_write(cstr_t p, const char* src, size_t cap, enum write_mode)
+{
+	if (!p)
+		return NULL;
+	cstr_wrapper dest_len = __cstr_relsiz(*dest, __cstr_type(*dest));
+	cstr_wrapper src_len = strnlen(src, BUFSIZ);
+	cstr_wrapper isrc_len = MIN(cap, src_len);
+	__cstr_resize_from(&p, NULL, dest_len + isrc_len, 0);
+	memcpy(p + dest_len, src, isrc_len);
+	return p + dest_len + src_len - 1;
+}
+#endif

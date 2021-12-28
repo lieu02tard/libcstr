@@ -24,18 +24,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
  * This is not to replace normal C-like I/O
  * Use at your own risk */
 
-enum cstr_io_mode {
-	CSTR_IO_APPEND,
-	CSTR_IO_WRITE
-};
 
 #ifndef CSTR_IO_BUFFER
 	#define CSTR_IO_BUFFER 4096
 #endif
 
-extern char* cstr_delim(cstr_t,  size_t size, int delim, int *index, int fd, enum cstr_io_mode);
-extern char* cstr_getline(cstr_t, size_t size, int *index, int fd, enum cstr_io_mode);
-extern char* cstr_fgets(cstr_t, size_t size, int *index, int fd, enum cstr_io_mode);
-extern char* cstr_getc(cstr_t, int fd);
 
+extern char* cstr_delim(cstr_t,  size_t size, char delim, size_t *index, int fd, enum write_mode);
+extern char* cstr_getline(cstr_t, size_t size, size_t *index, int fd, enum write_mode);
+extern char* cstr_fgets(cstr_t, size_t size, size_t *index, int fd, enum write_mode);
 #endif
