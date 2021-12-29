@@ -140,16 +140,18 @@ struct alloc_man {
 	enum cstr_tt type;
 };
 
+#ifndef __get_write_enum
+#define __get_write_enum
+enum write_mode {
+	WRITE_APPEND	= 0x01,
+	WRITE_OVERWRITE	= 0x02
+};
+#endif
+
 
 #endif /* __get_struct */
 #endif /* __need_struct */
 
-#ifndef __get_write_enum
-enum write_mode {
-	WRITE_APPEND,
-	WRITE_OVER
-};
-#endif
 
 // Generate
 extern cstr_t ncstr_mt();
@@ -220,7 +222,7 @@ extern inline cstr_lower __cstr_nof_buffer_alone(size_t);
 extern void __cstr_resize_from(cstr_t* p, const char* src, size_t cap, int create);
 
 #ifdef __get_write_enum
-extern void* __cstr_write(cstr_t p, const char* src, size_t cap, enum write_mode);
+extern void* __cstr_write(cstr_t* p, const char* src, size_t cap, size_t pos, enum write_mode);
 #endif
 
 #endif /* __get_cstr_inner_func */

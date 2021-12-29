@@ -1,12 +1,16 @@
+#define CSTR_DEBUG
 #define __need_struct
 #define __need_cstr_inner_func
+
+
 #include "cstr.h"
-#define CSTR_DEBUG
-#include <stdlib.h>
+
 #ifdef CSTR_DEBUG
 	#include <stdio.h>
 	#include "cstr_dbg.h"
 #endif
+
+#include <stdlib.h>
 #include <string.h>
 #include <errno.h>
 
@@ -515,6 +519,7 @@ void __cstr_resize_from(cstr_t* p, const char* src, size_t capacity, int create)
 	else if (*p == NULL)
 		return;
 
+
 	enum cstr_tt otype = __cstr_type(*p);
 	if (__cstr_relsiz(*p, otype) == capacity)
 	{
@@ -598,16 +603,37 @@ void cstr_trim(cstr_t* p)
 }
 
 #ifdef __get_write_enum
+/**
+ * __cstr_write - Write a string to abitrary position in a string
+ * @p:		pointer to &cstr_t
+ * @src:	source string
+ * @cap:	length to write
+ * @pos:	write position
+ * @mode:	write mode
+ *
+ * Write @cap of @src string into @p. The position it write into is determine as follow:
+ * 
+ * Write @cap of @src's character into @p at position @pos.
+ * If @mode contain WRITE_ERASE, erase all content from the end of newly-inserted string until the end of character array
+ * If @mode contain WRITE_NULLP, erase all content except the newly-inserted string
+ * 
+ * If @pos is negative, count from the end so that -1 denote the last position.
+ * If @mode contain WRITE_APPEND, the last position denote the terminate '\0' or that denote by relsiz metadata.
+ * Otherwise, the last position denote the last position in entire string allocated. If @mode doesn't contain WRITE_APPEND, it is obvious that new memory will be allocated
+ */
 
-void* __cstr_write(cstr_t p, const char* src, size_t cap, enum write_mode)
+void* __cstr_write(cstr_t* p, const char* src, size_t cap, enum write_mode mode)
 {
 	if (!p)
 		return NULL;
-	cstr_wrapper dest_len = __cstr_relsiz(*dest, __cstr_type(*dest));
-	cstr_wrapper src_len = strnlen(src, BUFSIZ);
-	cstr_wrapper isrc_len = MIN(cap, src_len);
-	__cstr_resize_from(&p, NULL, dest_len + isrc_len, 0);
-	memcpy(p + dest_len, src, isrc_len);
-	return p + dest_len + src_len - 1;
+	enum str_tt otype = __cstr_type(*p);
+	cstr_wrapper src_len = __cstr_relsiz(*p, otype);
+	// Assume @src hold equal to or more than @cap character(s)
+	cstr_wrapper real_len = MIN(c)
+	switch (mode)
+	{
+		case 
+	}
+
 }
 #endif

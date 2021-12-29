@@ -29,8 +29,15 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 	#define CSTR_IO_BUFFER 4096
 #endif
 
+#ifndef __get_write_enum
+#define __get_write_enum
+enum write_mode {
+	WRITE_APPEND	= 0x01,
+	WRITE_OVERWRITE	= 0x02
+};
+#endif
 
-extern char* cstr_delim(cstr_t,  size_t size, char delim, size_t *index, int fd, enum write_mode);
-extern char* cstr_getline(cstr_t, size_t size, size_t *index, int fd, enum write_mode);
-extern char* cstr_fgets(cstr_t, size_t size, size_t *index, int fd, enum write_mode);
+extern char* cstr_delim(cstr_t*,  size_t size, char delim, size_t *index, int fd, enum write_mode);
+extern char* cstr_getline(cstr_t* , size_t size, size_t *index, int fd, enum write_mode);
+extern char* cstr_fgets(cstr_t* , size_t size, size_t *index, int fd, enum write_mode);
 #endif
