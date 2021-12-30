@@ -73,7 +73,7 @@ struct head0 {
 };
 #define T0_MAX	(uint8_t)(-1)
 #ifndef T0_BUFFER
-    #define T0_BUFFER 0x10
+    #define T0_BUFFER 0x40
 #endif
 
 struct head1 {

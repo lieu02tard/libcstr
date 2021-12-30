@@ -287,3 +287,42 @@ char* cstr_fgets(cstr_t* p, size_t size, size_t* index, int fd, enum write_mode 
 
 	return c;
 }
+
+void cstr_puts(cstr_t p, size_t pos, int fd)
+{
+	enum cstr_tt otype = __cstr_type(p);
+	cstr_wrapper real_len = __cstr_relsiz(p, otype);
+	cstr_wrapper to_write = real_len - pos;
+	if (to_write < 0)
+	{
+		__cstr_debug("cstr_puts", "Out of index position", 0);
+		return;
+	}
+	write(fd, p + pos, to_write);
+}
+
+static inline cstr_wrapper __min(cstr_wrapper a, cstr_wrapper b)
+{
+	return (a < b) ? a : b;
+}
+void cstr_putsn(cstr_t p, size_t pos, size_t size, int fd)
+{
+	enum cstr_tt otype = __cstr_type(p);
+	cstr_wrapper real_len = __cstr_relsiz(p, otype);
+	cstr_wrapper to_write = __min(size, real_len - pos);
+
+	if (to_write < 0)
+	{
+		__cstr_debug("cstr_putsn", "Out of index position", 0);
+		return;
+	}
+	write(fd, p + pos, to_write);
+}
+
+void cstr_dump(cstr_t p, int fd)
+{
+	enum cstr_tt otype = __cstr_type(p);
+	void* head = __cstr_head(p, otype);
+	cstr_wrapper to_write = __cstr_nofbuf(p, otype) * __cstr_datbuf(otype) + __cstr_datoff(otype);
+	write(fd, head, to_write);
+}

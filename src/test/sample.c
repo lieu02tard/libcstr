@@ -4,11 +4,13 @@
 #include <wcstr.h>
 
 #include <stdio.h>
+#include <unistd.h>
 
 #include <time.h>
 #define RUN_LIMIT 400
 int main(int argc, const char* argv[])
 {
+	int fd = fileno(stdout);
 	const char* passage = "Never gonna give you up\n"
 		"Never gonna make you cry\n"
 		"Never gonna tell a lie\n"

@@ -14,7 +14,7 @@ int main()
 	for (int i = 0; i < RUN_LIMIT; i++)
 	{
 		std::string s_0(20, '\0');
-		
+		std::cout << "Size: " << passage.size() << '\n';	
 		std::string s_1 = "Never gonna give you up\n";
 		std::cout<< "String 1\n" << s_1;
 		std::string s_2 = "Never gonna make you cry\n";
