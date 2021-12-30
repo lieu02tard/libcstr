@@ -222,7 +222,7 @@ extern inline cstr_lower __cstr_nof_buffer_alone(size_t);
 extern void __cstr_resize_from(cstr_t* p, const char* src, size_t cap, int create);
 
 #ifdef __get_write_enum
-extern void* __cstr_write(cstr_t* p, const char* src, size_t cap, size_t pos, enum write_mode);
+//extern void* __cstr_write(cstr_t* p, const char* src, size_t cap, size_t pos, enum write_mode); // Waiting for implemetation
 #endif
 
 #endif /* __get_cstr_inner_func */

@@ -622,4 +622,18 @@ void cstr_trim(cstr_t* p)
  * Otherwise, the last position denote the last position in entire string allocated. If @mode doesn't contain WRITE_APPEND, it is obvious that new memory will be allocated
  */
 
+void* __cstr_write(cstr_t* p, const char* src, size_t cap, enum write_mode mode)
+{
+	if (!p)
+		return NULL;
+	enum str_tt otype = __cstr_type(*p);
+	cstr_wrapper src_len = __cstr_relsiz(*p, otype);
+	// Assume @src hold equal to or more than @cap character(s)
+	cstr_wrapper real_len = MIN(c)
+	switch (mode)
+	{
+		case 
+	}
+
+}
 #endif

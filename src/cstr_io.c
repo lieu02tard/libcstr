@@ -1,6 +1,7 @@
 #define __need_struct
 #define __need_cstr_inner_func
 
+#define CSTR_IO_BUFFER 64
 #include "cstr_io.h"
 #include "cstr_dbg.h"
 #include "cstr_utility.h"
@@ -27,9 +28,9 @@ inline int cread(char* buf, char delim, int max, int fd)
 __attribute__((always_inline))
 inline int cread_no_delim(char* buf, int max, int fd)
 {
-	char c;
+	char c; int n;
 	int i = 0;
-	while((i < max) && ((c = read(fd, buf, sizeof(char)) != EOF)))
+	while((i < max) && (n = read(fd, &c, sizeof(char)), c != EOF))
 	{
 		*(buf++) = c;
 		++i;
@@ -54,13 +55,18 @@ inline int cread_no_delim(char* buf, int max, int fd)
  */
 char* cstr_delim (cstr_t* p, size_t size, char delim, size_t* index, int fd, enum write_mode mode)
 {
+	if (!p)
+		return NULL;
+
 	char buf[CSTR_IO_BUFFER];
 	char* c = NULL;
 	int n = 0;
+	char* head = NULL;
 	n = cread(buf, delim, CSTR_IO_BUFFER, fd);
 
 	cstr_wrapper pos = 0;
 	enum cstr_tt otype = __cstr_type(*p);
+	head = __cstr_head(*p, otype);
 	struct alloc_man man = __cstr_getman_wp(*p, otype);
 
 	switch (mode)
@@ -71,9 +77,10 @@ char* cstr_delim (cstr_t* p, size_t size, char delim, size_t* index, int fd, enu
 			{
 				man = __cstr_getman(pos + n);
 				otype = man.type;
-				char* _alloc = (char*) realloc(*p, man.nofblk * sizeof(char));
+				char* _alloc = (char*) realloc(head, man.nofblk * sizeof(char));
 				if (!_alloc)
 					__cstr_debug("cstr_delim", "Allocation failure", 2);
+				head = _alloc;
 				memcpy(_alloc + man.datoff + pos, buf, n * sizeof(char));
 				*p = __cstr_set_header(_alloc, man, otype);
 				c = *p + pos + n;
@@ -95,9 +102,10 @@ char* cstr_delim (cstr_t* p, size_t size, char delim, size_t* index, int fd, enu
 			{
 				man  = __cstr_getman(n);
 				otype = man.type;
-				char* _alloc = (char*) realloc(*p, man.nofblk * sizeof(char));
+				char* _alloc = (char*) realloc(head, man.nofblk * sizeof(char));
 				if (!_alloc)
 					__cstr_debug("cstr_delim", "Allocation failure", 2);
+				head = _alloc;
 				memcpy(_alloc + man.datoff, buf, n *sizeof(char));
 				*p = __cstr_set_header(_alloc, man, otype);
 				c = *p + n;
@@ -125,9 +133,10 @@ char* cstr_delim (cstr_t* p, size_t size, char delim, size_t* index, int fd, enu
 		{
 			man = __cstr_getman(pos + n);
 			otype = man.type;
-			char* _alloc = (char*) realloc(*p, man.nofblk * sizeof(char));
+			char* _alloc = (char*) realloc(head, man.nofblk * sizeof(char));
 			if (!_alloc)
 				__cstr_debug("cstr_delim", "Allocation failure", 2);
+			head = _alloc;
 			memcpy(_alloc + man.datoff + pos, buf, n * sizeof(char));
 			*p = __cstr_set_header(_alloc, man, otype);
 			c = *p + pos + n;
@@ -177,10 +186,12 @@ char* cstr_fgets(cstr_t* p, size_t size, size_t* index, int fd, enum write_mode 
     char buf[CSTR_IO_BUFFER];
 	char* c = NULL;
 	int n = 0;
+	char* head = NULL;
 	n = cread_no_delim(buf, CSTR_IO_BUFFER, fd);
 
 	cstr_wrapper pos = 0;
 	enum cstr_tt otype = __cstr_type(*p);
+	head = __cstr_head(*p, otype);
 	struct alloc_man man = __cstr_getman_wp(*p, otype);
 
 	switch (mode)
@@ -191,9 +202,10 @@ char* cstr_fgets(cstr_t* p, size_t size, size_t* index, int fd, enum write_mode 
 			{
 				man = __cstr_getman(pos + n);
 				otype = man.type;
-				char* _alloc = (char*) realloc(*p, man.nofblk * sizeof(char));
+				char* _alloc = (char*) realloc(head, man.nofblk * sizeof(char));
 				if (!_alloc)
 					__cstr_debug("cstr_delim", "Allocation failure", 2);
+				head = _alloc;
 				memcpy(_alloc + man.datoff + pos, buf, n * sizeof(char));
 				*p = __cstr_set_header(_alloc, man, otype);
 				c = *p + pos + n;
@@ -202,7 +214,7 @@ char* cstr_fgets(cstr_t* p, size_t size, size_t* index, int fd, enum write_mode 
 			}
 			else
 			{
-				memcpy(p + pos, buf, n * sizeof(char));
+				memcpy(*p + pos, buf, n * sizeof(char));
 				c = *p + pos + n;
 				*c = '\0';
 				pos += n;
@@ -215,9 +227,10 @@ char* cstr_fgets(cstr_t* p, size_t size, size_t* index, int fd, enum write_mode 
 			{
 				man  = __cstr_getman(n);
 				otype = man.type;
-				char* _alloc = (char*) realloc(*p, man.nofblk * sizeof(char));
+				char* _alloc = (char*) realloc(head, man.nofblk * sizeof(char));
 				if (!_alloc)
 					__cstr_debug("cstr_delim", "Allocation failure", 2);
+				head = _alloc;
 				memcpy(_alloc + man.datoff, buf, n *sizeof(char));
 				*p = __cstr_set_header(_alloc, man, otype);
 				c = *p + n;
@@ -226,7 +239,7 @@ char* cstr_fgets(cstr_t* p, size_t size, size_t* index, int fd, enum write_mode 
 			}
 			else
 			{
-				memcpy(p, buf, n * sizeof(char));
+				memcpy(*p, buf, n * sizeof(char));
 				c = *p + n;
 				*c = '\0';
 				pos += n;
@@ -241,13 +254,14 @@ char* cstr_fgets(cstr_t* p, size_t size, size_t* index, int fd, enum write_mode 
 		*index += n;
 	while((n = cread_no_delim(buf, CSTR_IO_BUFFER, fd)) != 0)
 	{
-		if (pos + n > man.nofblk - man.datoff)
+		if (pos + n >= man.nofblk - man.datoff)
 		{
 			man = __cstr_getman(pos + n);
 			otype = man.type;
-			char* _alloc = (char*) realloc(*p, man.nofblk * sizeof(char));
+			char* _alloc = (char*) realloc(head, man.nofblk * sizeof(char));
 			if (!_alloc)
 				__cstr_debug("cstr_delim", "Allocation failure", 2);
+			head = _alloc;
 			memcpy(_alloc + man.datoff + pos, buf, n * sizeof(char));
 			*p = __cstr_set_header(_alloc, man, otype);
 			c = *p + pos + n;
@@ -256,7 +270,7 @@ char* cstr_fgets(cstr_t* p, size_t size, size_t* index, int fd, enum write_mode 
 		}
 		else
 		{
-			memcpy(p + pos, buf, n * sizeof(char));
+			memcpy(*p + pos, buf, n * sizeof(char));
 			c = *p + pos + n;
 			*c ='\0';
 			pos += n;
