@@ -1,9 +1,9 @@
-#define CSTR_DEBUG
 #define __need_struct
 #define __need_cstr_inner_func
 
 
 #include "cstr.h"
+#include "config.h"
 
 #ifdef CSTR_DEBUG
 	#include <stdio.h>

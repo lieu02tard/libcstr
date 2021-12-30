@@ -1,7 +1,9 @@
 #define __need_struct
 #define __need_cstr_inner_func
+
 #include "cstr_utility.h"
-#define CSTR_DEBUG
+#include "config.h"
+
 #include <string.h>
 #include <stdlib.h>
 #ifdef CSTR_DEBUG

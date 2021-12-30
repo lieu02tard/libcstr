@@ -64,8 +64,8 @@ build:
 		@mkdir -p $(APP_DIR)
 		@mkdir -p $(OBJ_DIR)
 
-release	: CFLAGS+=-O2
-release	: CXXFLAGS+=-O2
+release	: CFLAGS+=-O2 -D __release
+release	: CXXFLAGS+=-O2 -D __release
 release	: all
 
 debug	: CFLAGS+=-g

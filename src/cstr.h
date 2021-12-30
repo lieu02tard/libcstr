@@ -27,7 +27,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef FLIB_CSTR_H
 #define FLIB_CSTR_H
 
-
+#include "config.h"
 #include <stdint.h>
 #include <stddef.h>
 
@@ -35,26 +35,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 	#define BUFSIZ 8192
 #endif
 
-#ifndef CSTR_MALLOC
-	#define CSTR_MALLOC malloc
-#endif
 
-#ifndef CSTR_CALLOC
-	#define CSTR_CALLOC calloc
-#endif
-
-#ifndef CSTR_REALLOC
-	#define CSTR_REALLOC realloc
-#endif
-
-#ifndef CST_FREE
-	#define CSTR_FREE free
-#endif
-#define __want_64	// Whether we want 64-bits string. May better comment out it
-
-#if defined  __LP64__  && defined __want_64
-	#define HAVE_64_BITS
-#endif
 
 typedef char* cstr_t;
 typedef const char* cstr_const_t;

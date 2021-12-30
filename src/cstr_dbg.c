@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#ifdef CSTR_DEBUG
 inline void __cstr_print_title(const char* title)
 {
 	fputs(c_blue, stdout);
@@ -22,6 +23,7 @@ inline void __cstr_print_debug(const char* title, const char* content)
 	puts(content);
 	putc('\n', stdout);
 }
+#endif
 
 /**
  * __cstr_debug - Print debug message

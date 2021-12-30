@@ -1,6 +1,8 @@
 #ifndef _CSTR_UTILITY_H_
 #define _CSTR_UTILITY_H_
+
 #include "cstr.h"
+#include "config.h"
 
 #ifdef __cplusplus
 extern "C" {

@@ -10,7 +10,6 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-#define CSTR_DEBUG
 __attribute__((always_inline))
 inline int cread(char* buf, char delim, int max, int fd)
 {
