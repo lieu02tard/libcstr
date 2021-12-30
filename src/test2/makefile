@@ -78,7 +78,7 @@ execute	:
 test	: debug
 test	: all
 test	: 
-		valgrind -s --track-origins=yes --leak-check=full --show-leak-kinds=all $(APP_DIR)/$(TARGET) | tee -a valgrind_log
+		valgrind -s --track-origins=yes --leak-check=full --show-leak-kinds=all $(APP_DIR)/$(TARGET)
 
 clean:
 		-@rm -rf $(BUILD)

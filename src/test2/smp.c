@@ -11,7 +11,7 @@
 #define SAMPLE_FILE "sample"
 int main(int argc, const char* argv[])
 {
-	int fd = fileno(stdin);
+	int fd = open(SAMPLE_FILE, O_RDONLY);
 	cstr_t p = ncstr_new(200);
 	size_t index = 0;
 	cstr_fgets(&p, BUFSIZ, &index, fd, WRITE_OVERWRITE);

@@ -10,17 +10,23 @@
 #include <stdlib.h>
 #include <unistd.h>
 
+#define CSTR_DEBUG
 __attribute__((always_inline))
 inline int cread(char* buf, char delim, int max, int fd)
 {
-	char c;
+	char c; int n;
 	int i = 0;
-	while((i < max) && ((c = read(fd, buf, sizeof(char)) != EOF)))
+	while((i < max) && ((n = read(fd, buf, max * sizeof(char)) != EOF)))
 	{
-		*(buf++) = c;
-		++i;
+#ifdef CSTR_DEBUG
+		puts(buf);
+#endif
+		c = *(buf++);
 		if (c == delim)
+		{
+			*buf = '\0';
 			break;
+		}
 	}
 	return i;
 }
@@ -30,9 +36,9 @@ inline int cread_no_delim(char* buf, int max, int fd)
 {
 	char c; int n;
 	int i = 0;
-	while((i < max) && (n = read(fd, &c, sizeof(char)), c != EOF))
+	while((i < max) && (n = read(fd, buf, max * sizeof(char)), c != EOF))
 	{
-		*(buf++) = c;
+		//
 		++i;
 	}
 	return i;
