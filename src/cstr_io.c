@@ -88,7 +88,7 @@ char* cstr_delim (cstr_t* p, size_t size, char delim, size_t* index, int fd, enu
 					__cstr_debug("cstr_delim", "Allocation failure", 2);
 				head = _alloc;
 				memcpy(_alloc + man.datoff + pos, buf, n * sizeof(char));
-				*p = __cstr_set_header(_alloc, man, otype);
+				*p = __cstr_set_header(_alloc, &man, otype);
 				c = *p + pos + n;
 				*c = '\0';
 				pos += n;
@@ -113,7 +113,7 @@ char* cstr_delim (cstr_t* p, size_t size, char delim, size_t* index, int fd, enu
 					__cstr_debug("cstr_delim", "Allocation failure", 2);
 				head = _alloc;
 				memcpy(_alloc + man.datoff, buf, n *sizeof(char));
-				*p = __cstr_set_header(_alloc, man, otype);
+				*p = __cstr_set_header(_alloc, &man, otype);
 				c = *p + n;
 				*c = '\0';
 				pos += n;
@@ -144,7 +144,7 @@ char* cstr_delim (cstr_t* p, size_t size, char delim, size_t* index, int fd, enu
 				__cstr_debug("cstr_delim", "Allocation failure", 2);
 			head = _alloc;
 			memcpy(_alloc + man.datoff + pos, buf, n * sizeof(char));
-			*p = __cstr_set_header(_alloc, man, otype);
+			*p = __cstr_set_header(_alloc, &man, otype);
 			c = *p + pos + n;
 			*c = '\0';
 			pos += n;
@@ -213,7 +213,7 @@ char* cstr_fgets(cstr_t* p, size_t size, size_t* index, int fd, enum write_mode 
 					__cstr_debug("cstr_delim", "Allocation failure", 2);
 				head = _alloc;
 				memcpy(_alloc + man.datoff + pos, buf, n * sizeof(char));
-				*p = __cstr_set_header(_alloc, man, otype);
+				*p = __cstr_set_header(_alloc, &man, otype);
 				c = *p + pos + n;
 				*c = '\0';
 				pos += n;
@@ -238,7 +238,7 @@ char* cstr_fgets(cstr_t* p, size_t size, size_t* index, int fd, enum write_mode 
 					__cstr_debug("cstr_delim", "Allocation failure", 2);
 				head = _alloc;
 				memcpy(_alloc + man.datoff, buf, n *sizeof(char));
-				*p = __cstr_set_header(_alloc, man, otype);
+				*p = __cstr_set_header(_alloc, &man, otype);
 				c = *p + n;
 				*c = '\0';
 				pos += n;
@@ -269,7 +269,7 @@ char* cstr_fgets(cstr_t* p, size_t size, size_t* index, int fd, enum write_mode 
 				__cstr_debug("cstr_delim", "Allocation failure", 2);
 			head = _alloc;
 			memcpy(_alloc + man.datoff + pos, buf, n * sizeof(char));
-			*p = __cstr_set_header(_alloc, man, otype);
+			*p = __cstr_set_header(_alloc, &man, otype);
 			c = *p + pos + n;
 			*c = '\0';
 			pos += n;

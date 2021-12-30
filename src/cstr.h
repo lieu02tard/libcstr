@@ -50,8 +50,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef CST_FREE
 	#define CSTR_FREE free
 #endif
+#define __want_64	// Whether we want 64-bits string. May better comment out it
 
-#ifdef __LP64__
+#if defined  __LP64__  && defined __want_64
 	#define HAVE_64_BITS
 #endif
 
@@ -128,7 +129,12 @@ typedef struct head3 header_cnt;
 typedef struct head2 header_cnt;
 #endif
 
-typedef intmax_t cstr_wrapper;
+//typedef intmax_t cstr_wrapper;
+#ifdef HAVE_64_BITS
+typedef intmax_t cstr_wrapper;	// This is why 64-bit string is not desired.
+#else
+typedef int cstr_wrapper;
+#endif
 typedef int cstr_lower;
 
 struct alloc_man {
@@ -211,8 +217,8 @@ extern inline header_cnt __cstr_header(const cstr_const_t, enum cstr_tt);
 extern inline struct alloc_man __cstr_getman(size_t);
 extern inline struct alloc_man __cstr_getman_wp(const cstr_const_t, enum cstr_tt);
 extern inline struct alloc_man __cstr_getman_wh(header_cnt, enum cstr_tt);
-extern inline void* __cstr_set_header(void*, struct alloc_man, enum cstr_tt);
-extern inline void* __cstr_set_header_wh(void*, header_cnt, enum cstr_tt);
+extern inline void* __cstr_set_header(void*, struct alloc_man*, enum cstr_tt);
+extern inline void* __cstr_set_header_wh(void*, header_cnt*, enum cstr_tt);
 
 extern inline cstr_lower __cstr_toflag(enum cstr_tt);
 extern inline enum cstr_tt __cstr_from_flag(cstr_lower);

@@ -294,38 +294,38 @@ inline struct alloc_man __cstr_getman_wh(header_cnt head, enum cstr_tt type)
 	return _return;
 }
 
-inline void* __cstr_set_header(void* p , struct alloc_man man, enum cstr_tt type)
+inline void* __cstr_set_header(void* p , struct alloc_man* man, enum cstr_tt type)
 {
 	switch(type)
 	{
 		case CSTR_TYPE_0:
 			while(0) {}
 			HEADER_TYPE(0) *tmp0 = (HEADER_TYPE(0)*)p;
-			tmp0->nofbuf	= man.nofbuf;
-			tmp0->relsiz	= man.relsiz;
-			tmp0->flag		= *((uint8_t*)&man.flag + sizeof(man.flag) - 1);
+			tmp0->nofbuf	= man->nofbuf;
+			tmp0->relsiz	= man->relsiz;
+			tmp0->flag		= *((uint8_t*)&man->flag + sizeof(man->flag) - 1);
 			return (void*)(tmp0 + 1);
 		case CSTR_TYPE_1:
 			while(0){}
 			HEADER_TYPE(1) *tmp1 = (HEADER_TYPE(1)*)p;
-			tmp1->nofbuf	= man.nofbuf;
-			tmp1->relsiz	= man.relsiz;
-			tmp1->flag		= *((uint8_t*)&man.flag + sizeof(man.flag) - 1);
+			tmp1->nofbuf	= man->nofbuf;
+			tmp1->relsiz	= man->relsiz;
+			tmp1->flag		= *((uint8_t*)&man->flag + sizeof(man->flag) - 1);
 			return (void*)(tmp1 + 1);
 		case CSTR_TYPE_2:
 			while(0){}
 			HEADER_TYPE(2) *tmp2 = (HEADER_TYPE(2)*)p;
-			tmp2->nofbuf	= man.nofbuf;
-			tmp2->relsiz	= man.relsiz;
-			tmp2->flag		= *((uint8_t*)&man.flag + sizeof(man.flag) - 1);
+			tmp2->nofbuf	= man->nofbuf;
+			tmp2->relsiz	= man->relsiz;
+			tmp2->flag		= *((uint8_t*)&man->flag + sizeof(man->flag) - 1);
 			return (void*)(tmp2 + 1);
 #ifdef HAVE_64_BITS
 		case CSTR_TYPE_3:
 			while(0){}
 			HEADER_TYPE(3) *tmp3 = (HEADER_TYPE(3)*)p;
-			tmp3->nofbuf	= man.nofbuf;
-			tmp3->relsiz	= man.relsiz;
-			tmp3->flag		= *((uint8_t*)&man.flag + sizeof(man.flag) - 1);
+			tmp3->nofbuf	= man->nofbuf;
+			tmp3->relsiz	= man->relsiz;
+			tmp3->flag		= *((uint8_t*)&man->flag + sizeof(man->flag) - 1);
 			return (void*)(tmp3 + 1);
 #endif
 		default:
@@ -334,38 +334,38 @@ inline void* __cstr_set_header(void* p , struct alloc_man man, enum cstr_tt type
 	}
 }
 
-inline void* __cstr_set_header_wh(void* p, header_cnt head, enum cstr_tt type)
+inline void* __cstr_set_header_wh(void* p, header_cnt* head, enum cstr_tt type)
 {
 	switch (type)
 	{
 		case CSTR_TYPE_0:
 			while(0){}
 			HEADER_TYPE(0) *tmp0 = (HEADER_TYPE(0)*)p;
-			tmp0->nofbuf	= head.nofbuf;
-			tmp0->relsiz	= head.relsiz;
-			tmp0->flag		= *((uint8_t*)&head.flag + sizeof(head.flag) - 1);
+			tmp0->nofbuf	= head->nofbuf;
+			tmp0->relsiz	= head->relsiz;
+			tmp0->flag		= *((uint8_t*)&head->flag + sizeof(head->flag) - 1);
 			return (void*)(tmp0 + 1);
 		case CSTR_TYPE_1:
 			while(0){}
 			HEADER_TYPE(1) *tmp1 = (HEADER_TYPE(1)*)p;
-			tmp1->nofbuf	= head.nofbuf;
-			tmp1->relsiz	= head.relsiz;
-			tmp1->flag		= *((uint16_t*)&head.flag + sizeof(head.flag) - 1);
+			tmp1->nofbuf	= head->nofbuf;
+			tmp1->relsiz	= head->relsiz;
+			tmp1->flag		= *((uint16_t*)&head->flag + sizeof(head->flag) - 1);
 			return (void*)(tmp1 + 1);
 		case CSTR_TYPE_2:
 			while(0){}
 			HEADER_TYPE(2) *tmp2 = (HEADER_TYPE(2)*)p;
-			tmp2->nofbuf	= head.nofbuf;
-			tmp2->relsiz	= head.relsiz;
-			tmp2->flag		= *((uint32_t*)&head.flag + sizeof(head.flag) - 1);
+			tmp2->nofbuf	= head->nofbuf;
+			tmp2->relsiz	= head->relsiz;
+			tmp2->flag		= *((uint32_t*)&head->flag + sizeof(head->flag) - 1);
 			return (void*)(tmp2 + 1);
 #ifdef HAVE_64_BITS
 		case CSTR_TYPE_3:
 			while(0){}
 			HEADER_TYPE(3) *tmp3 = (HEADER_TYPE(3)*)p;
-			tmp3->nofbuf	= head.nofbuf;
-			tmp3->relsiz	= head.relsiz;
-			tmp3->flag		= *((uint64_t*)&head.flag + sizeof(head.flag) - 1);
+			tmp3->nofbuf	= head->nofbuf;
+			tmp3->relsiz	= head->relsiz;
+			tmp3->flag		= *((uint64_t*)&head->flag + sizeof(head->flag) - 1);
 			return (void*)(tmp3 + 1);
 #endif
 		default:
@@ -428,7 +428,7 @@ cstr_t ncstr_mt()
 	uint8_t* _alloc = (uint8_t*) CSTR_MALLOC(man.nofblk * sizeof(char));
 	if (_alloc)
 	{
-		__cstr_set_header((void*)_alloc, man, CSTR_TYPE_0);
+		__cstr_set_header((void*)_alloc, &man, CSTR_TYPE_0);
 		_alloc[man.nofblk - 1] = '\0';
 		return (char*)_alloc + man.datoff;
 	}
@@ -443,7 +443,7 @@ cstr_t ncstr_new(size_t nbytes)
 	uint8_t* _alloc = (uint8_t*) CSTR_MALLOC(man.nofblk * sizeof(char));
 	if (_alloc)
 	{
-		cstr_t _return = (cstr_t)__cstr_set_header((void*)_alloc, man, man.type);
+		cstr_t _return = (cstr_t)__cstr_set_header((void*)_alloc, &man, man.type);
 		_alloc[man.nofblk - 1] = '\0';
 		return _return;
 	}
@@ -459,7 +459,7 @@ cstr_t ncstr_from(const char* s)
 	uint8_t* _alloc = (uint8_t*) CSTR_MALLOC(man.nofblk * sizeof(char));
 	if (_alloc)
 	{
-		cstr_t _return = (cstr_t)__cstr_set_header((void*)_alloc, man, man.type);
+		cstr_t _return = (cstr_t)__cstr_set_header((void*)_alloc, &man, man.type);
 		memcpy(_return, s, len);
 		_alloc[man.nofblk - 1] = '\0';
 		return _return;
@@ -510,7 +510,7 @@ void __cstr_resize_from(cstr_t* p, const char* src, size_t capacity, int create)
 		uint8_t* _alloc = (uint8_t*) CSTR_MALLOC(man.nofblk);
 		if (!_alloc)
 			__cstr_debug("cstr_resize","Allocation failed", 2);
-		*p = __cstr_set_header(_alloc, man, man.type);
+		*p = __cstr_set_header(_alloc, &man, man.type);
 		if (src)
 			memcpy(*p, src, capacity);
 		_alloc[man.nofblk - 1] = '\0';
@@ -539,7 +539,7 @@ void __cstr_resize_from(cstr_t* p, const char* src, size_t capacity, int create)
 		if (!_alloc)
 			__cstr_debug("cstr_resize", "Allocation failed", 2);
 		_alloc[man.nofblk - 1] = '\0';
-		*p = __cstr_set_header(_alloc, man, man.type);
+		*p = __cstr_set_header(_alloc, &man, man.type);
 		if (src)
 		{
 			size_t tmp = strnlen(src, BUFSIZ);
@@ -553,7 +553,7 @@ void __cstr_resize_from(cstr_t* p, const char* src, size_t capacity, int create)
 		uint8_t* _alloc = (uint8_t*) CSTR_REALLOC(*p, man.nofblk);
 		if (!_alloc)
 			__cstr_debug("cstr_resize", "Allocation failed", 2);
-		*p = __cstr_set_header(_alloc, man, man.type);
+		*p = __cstr_set_header(_alloc, &man, man.type);
 		if (src)
 		{
 			size_t tmp = strnlen(src, BUFSIZ);
@@ -596,7 +596,7 @@ void cstr_trim(cstr_t* p)
 			__cstr_debug("cstr_trim", "Allocation failed", 2);
 		memmove(_alloc + __cstr_datoff(otype), _alloc + man.datoff, man.relsiz);
 		_alloc[man.nofblk - 1] = '\0';
-		__cstr_set_header(_alloc, man, man.type);
+		__cstr_set_header(_alloc, &man, man.type);
 		*p = (char*)_alloc + man.datoff;
 		return;
 	}
