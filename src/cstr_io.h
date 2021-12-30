@@ -40,4 +40,8 @@ enum write_mode {
 extern char* cstr_delim(cstr_t*,  size_t size, char delim, size_t *index, int fd, enum write_mode);
 extern char* cstr_getline(cstr_t* , size_t size, size_t *index, int fd, enum write_mode);
 extern char* cstr_fgets(cstr_t* , size_t size, size_t *index, int fd, enum write_mode);
+
+extern void cstr_puts(cstr_t, size_t pos, int fd);
+extern void cstr_putsn(cstr_t, size_t pos, size_t size, int fd);
+extern void cstr_dump(cstr_t , int fd);
 #endif
