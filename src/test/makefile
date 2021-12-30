@@ -34,7 +34,7 @@ OBJ_DIR	:=$(BUILD)/obj
 INC		:=-I ..
 # Soruce files directory
 SRC_DIR	:= ..
-SRCS	:=$(shell find $(SRC_DIR) -name '*.cpp' -or -name '*.c')
+SRCS	:=$(shell find $(SRC_DIR)  -name '*.c')
 
 # Object and external object file
 OBJ		:=$(SRCS:%=$(OBJ_DIR)/%.o)
