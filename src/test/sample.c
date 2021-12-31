@@ -16,7 +16,7 @@ int main(int argc, const char* argv[])
 		"Never gonna make you cry\n"
 		"Never gonna tell a lie\n"
 		"And desert you\n";
-	for (int i = 0; i < RUN_LIMIT; i++)
+	for (int i = RUN_LIMIT; i; i--)
 	{
 		cstr_t cstr_0 = ncstr_new(20);
 		cstr_free(cstr_0);
