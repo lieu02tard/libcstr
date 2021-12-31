@@ -53,7 +53,7 @@ inline void __cstr_print_debug(const char* title, const char* content)
 #ifdef CSTR_DEBUG
 inline void __cstr_debug(enum CSTR_DEBUG_CODE code)
 {
-	switch (CSTR_DEBUG_CODE)
+	switch (code)
 	{
 		case CSTR_DEBUG_INVALID_STRING_TYPE:
 			__cstr_print_debug("cstr", "Invalid string type\n");

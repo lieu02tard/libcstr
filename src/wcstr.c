@@ -268,7 +268,7 @@ inline header_cnt __wcstr_header_from(void* p, enum wcstr_tt type)
 			};
 #endif
 		default:
-			__wcstr_debug(CSTR_DEBUG_INVALID_STRING_TYPE);
+			__cstr_debug(CSTR_DEBUG_INVALID_STRING_TYPE);
 	}
 }
 
@@ -529,7 +529,7 @@ void __wcstr_resize_from(wcstr_t* p, const WCHAR_TYPE* src, size_t capacity, int
 		struct alloc_man man = __wcstr_getman(capacity);
 		wcstr_t _alloc = (wcstr_t) CSTR_MALLOC(man.nofblk * sizeof(WCHAR_TYPE));
 		if (!_alloc)
-			__wcstr_debug(CSTR_DEBUG_ALLOC_FAILURE);
+			__cstr_debug(CSTR_DEBUG_ALLOC_FAILURE);
 		*p = __wcstr_set_header(_alloc, &man, man.type);
 		if (src)
 			memcpy(*p, src, capacity * sizeof(WCHAR_TYPE));
@@ -615,7 +615,7 @@ void wcstr_trim(wcstr_t* p)
 			__cstr_debug(CSTR_DEBUG_ALLOC_FAILURE);
 		memmove(_alloc + __wcstr_datoff(otype), _alloc + man.datoff, man.relsiz * sizeof(WCHAR_TYPE));
 		_alloc[man.nofblk - 1] = '\0';
-		__wcstr_set_header(_alloc, man, man.type);
+		__wcstr_set_header(_alloc, &man, man.type);
 		*p = _alloc + man.datoff;
 		return;
 	}
