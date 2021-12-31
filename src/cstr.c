@@ -33,7 +33,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #define HEADER_TYPE(n) struct head##n
 
 /* -----------Inner function------------*/
-
+__attribute__((always_inline))
 inline enum cstr_tt __cstr_type(const cstr_const_t p)
 {
 	return *((uint8_t*)(p) - 1) & __CSTR_TYPE_MASK;
@@ -46,11 +46,13 @@ inline enum cstr_tt __cstr_type(const cstr_const_t p)
  *
  * Return the position that is allocate for string @p
  */
+__attribute__((always_inline))
 inline void* __cstr_head(const cstr_const_t p , enum cstr_tt type)
 {
 	return (void*)p - __cstr_datoff(type);
 }
 
+__attribute__((always_inline))
 inline enum cstr_tt __cstr_type_wn(size_t n)
 {
 #ifdef HAVE_64_BITS
@@ -65,6 +67,7 @@ inline enum cstr_tt __cstr_type_wn(size_t n)
 #endif
 }
 
+__attribute__(always_inline)
 inline cstr_lower __cstr_nofbuf(const cstr_const_t p, enum cstr_tt type)
 {
 	switch (type)
@@ -84,6 +87,7 @@ inline cstr_lower __cstr_nofbuf(const cstr_const_t p, enum cstr_tt type)
 	}
 }
 
+__attribute__((always_inline))
 inline cstr_wrapper __cstr_relsiz(const cstr_const_t p, enum cstr_tt type)
 {
 	switch (type)
@@ -103,6 +107,7 @@ inline cstr_wrapper __cstr_relsiz(const cstr_const_t p, enum cstr_tt type)
 	}
 }
 
+__attribute__((always_inline))
 inline cstr_lower __cstr_flag(const cstr_const_t p, enum cstr_tt type)
 {
 	switch (type)
@@ -122,6 +127,7 @@ inline cstr_lower __cstr_flag(const cstr_const_t p, enum cstr_tt type)
 	}
 }
 
+__attribute__((always_inline))
 inline cstr_lower __cstr_datoff(enum cstr_tt type)
 {
 	switch (type)
@@ -141,11 +147,13 @@ inline cstr_lower __cstr_datoff(enum cstr_tt type)
 	}
 }
 
+__attribute__((always_inline))
 inline cstr_lower __cstr_datoff_wn(size_t nbytes)
 {
 	return __cstr_datoff(__cstr_type_wn(nbytes));
 }
 
+__attribute__((always_inline))
 inline cstr_lower __cstr_datbuf(enum cstr_tt type)
 {
 	switch (type)
@@ -165,11 +173,13 @@ inline cstr_lower __cstr_datbuf(enum cstr_tt type)
 	}
 }
 
+__attribute__((always_inline))
 inline cstr_lower __cstr_datbuf_wn(size_t nbytes)
 {
 	return __cstr_datbuf(__cstr_type_wn(nbytes));
 }
 
+__attribute__((always_inline))
 inline void __cstr_set_nofbuf(const cstr_const_t p, cstr_lower val, enum cstr_tt type)
 {
 	switch (type)
@@ -194,6 +204,7 @@ inline void __cstr_set_nofbuf(const cstr_const_t p, cstr_lower val, enum cstr_tt
 	}
 }
 
+__attribute__((always_inline))
 inline void __cstr_set_relsiz(const cstr_const_t p, cstr_wrapper val, enum cstr_tt type)
 {
 	switch (type)
@@ -218,11 +229,13 @@ inline void __cstr_set_relsiz(const cstr_const_t p, cstr_wrapper val, enum cstr_
 	}
 }
 
+__attribute__((always_inline))
 inline header_cnt __cstr_header(const cstr_const_t p, enum cstr_tt type)
 {
 	return __cstr_header_from(__cstr_head(p, type), type);
 }
 
+__attribute__((always_inline))
 inline header_cnt __cstr_header_from(void* p, enum cstr_tt type)
 {
 	switch (type)
@@ -270,6 +283,7 @@ inline header_cnt __cstr_header_from(void* p, enum cstr_tt type)
 	}
 }
 
+__attribute__((always_inline))
 inline struct alloc_man __cstr_getman(size_t nbytes)
 {
 	enum cstr_tt type = __cstr_type_wn(nbytes);
@@ -284,6 +298,7 @@ inline struct alloc_man __cstr_getman(size_t nbytes)
 	return _return;
 }
 
+__attribute__((always_inline))
 inline struct alloc_man __cstr_getman_wp(const cstr_const_t p, enum cstr_tt type)
 {
 	struct alloc_man _return = {
@@ -297,6 +312,7 @@ inline struct alloc_man __cstr_getman_wp(const cstr_const_t p, enum cstr_tt type
 	return _return;
 }
 
+__attribute__((always_inline))
 inline struct alloc_man __cstr_getman_wh(header_cnt head, enum cstr_tt type)
 {
 	struct alloc_man _return = {
@@ -310,6 +326,7 @@ inline struct alloc_man __cstr_getman_wh(header_cnt head, enum cstr_tt type)
 	return _return;
 }
 
+__attribute__((always_inline))
 inline void* __cstr_set_header(void* p , struct alloc_man* man, enum cstr_tt type)
 {
 	switch(type)
@@ -350,6 +367,7 @@ inline void* __cstr_set_header(void* p , struct alloc_man* man, enum cstr_tt typ
 	}
 }
 
+__attribute__((always_inline))
 inline void* __cstr_set_header_wh(void* p, header_cnt* head, enum cstr_tt type)
 {
 	switch (type)
@@ -389,6 +407,7 @@ inline void* __cstr_set_header_wh(void* p, header_cnt* head, enum cstr_tt type)
 	}
 }
 
+__attribute__((always_inline))
 inline cstr_lower __cstr_toflag(enum cstr_tt type)
 {
 	cstr_lower tmp = 0;
@@ -397,17 +416,20 @@ inline cstr_lower __cstr_toflag(enum cstr_tt type)
 	return tmp;
 }
 
+__attribute__((always_inline))
 inline enum cstr_tt __cstr_from_flag(cstr_lower flag)
 {
 	uint8_t* ret = (uint8_t*)&flag + sizeof(flag) - 1;
 	return *ret;
 }
 
+__attribute__((always_inline))
 inline cstr_lower __cstr_nof_buffer(size_t nbytes, enum cstr_tt type)
 {
 	return nbytes/__cstr_datbuf(type) + 1;
 }
 
+__attribute__((always_inline))
 inline cstr_lower __cstr_nof_buffer_alone(size_t nbytes)
 {
 	return __cstr_nof_buffer(nbytes, __cstr_type_wn(nbytes));
