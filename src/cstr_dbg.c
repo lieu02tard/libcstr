@@ -51,16 +51,29 @@ inline void __cstr_print_debug(const char* title, const char* content)
  * Only work if CSTR_DEBUG is turned on
  */
 #ifdef CSTR_DEBUG
-inline void __cstr_debug(const char* title, const char* content, int code)
+inline void __cstr_debug(enum CSTR_DEBUG_CODE code)
 {
-	__cstr_print_debug(title, content);
-	if (code)
+	switch (CSTR_DEBUG_CODE)
+	{
+		case CSTR_DEBUG_INVALID_STRING_TYPE:
+			__cstr_print_debug("cstr", "Invalid string type\n");
+			break;
+		case CSTR_DEBUG_ALLOC_FAILURE:
+			__cstr_print_debug("cstr", "Memory allocation failure\n");
+			break;
+		case CSTR_DEBUG_OUT_OF_INDEX:
+			__cstr_print_debug("cstr", "String access out of index");
+			break;
+		default:
+			break;
+	}
+	if (code != CSTR_DEBUG_NOTHING)
 		exit(code);
 }
 #else
-inline void __cstr_debug(const char* title, const char* content, int code)
+inline void __cstr_debug(enum CSTR_DEBUG_CODE code)
 {
-	if (code)
+	if (code != CSTR_DEBUG_NOTHING)
 		exit(code);
 }
 #endif

@@ -21,10 +21,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "cstr.h"
 #include "config.h"
 
-#ifdef CSTR_DEBUG
-	#include <stdio.h>
-	#include "cstr_dbg.h"
-#endif
+#include "cstr_dbg.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -67,7 +64,7 @@ inline enum cstr_tt __cstr_type_wn(size_t n)
 #endif
 }
 
-__attribute__(always_inline)
+__attribute__((always_inline))
 inline cstr_lower __cstr_nofbuf(const cstr_const_t p, enum cstr_tt type)
 {
 	switch (type)
@@ -83,7 +80,7 @@ inline cstr_lower __cstr_nofbuf(const cstr_const_t p, enum cstr_tt type)
 			return ((HEADER_TYPE(3)*)p - 1)->nofbuf;
 #endif
 		default:
-			__cstr_debug("__cstr_nofbuf", "Invalid string type", 1);
+			__cstr_debug(CSTR_DEBUG_INVALID_STRING_TYPE);
 	}
 }
 
@@ -103,7 +100,7 @@ inline cstr_wrapper __cstr_relsiz(const cstr_const_t p, enum cstr_tt type)
 			return ((HEADER_TYPE(3)*)p - 1)->relsiz;
 #endif
 		default:
-			__cstr_debug("__cstr_relsiz", "Invalid string type", 1);
+			__cstr_debug(CSTR_DEBUG_INVALID_STRING_TYPE);
 	}
 }
 
@@ -123,7 +120,7 @@ inline cstr_lower __cstr_flag(const cstr_const_t p, enum cstr_tt type)
 			return ((HEADER_TYPE(3)*)p - 1)->flag;
 #endif
 		default:
-			__cstr_debug("__cstr_flag", "Invalid string type", 1);
+			__cstr_debug(CSTR_DEBUG_INVALID_STRING_TYPE);
 	}
 }
 
@@ -143,7 +140,7 @@ inline cstr_lower __cstr_datoff(enum cstr_tt type)
 			return sizeof(HEADER_TYPE(3));
 #endif
 		default:
-			__cstr_debug("__cstr_datoff", "Invalid string type", 1);
+			__cstr_debug(CSTR_DEBUG_INVALID_STRING_TYPE);
 	}
 }
 
@@ -169,7 +166,7 @@ inline cstr_lower __cstr_datbuf(enum cstr_tt type)
 			return T3_BUFFER;
 #endif
 		default:
-			__cstr_debug("__cstr_datbuf", "Invalid string type", 1);
+			__cstr_debug(CSTR_DEBUG_INVALID_STRING_TYPE);
 	}
 }
 
@@ -199,7 +196,7 @@ inline void __cstr_set_nofbuf(const cstr_const_t p, cstr_lower val, enum cstr_tt
 			return;
 #endif
 		default:
-			__cstr_debug("__cstr_set_nofbuf", "Invalid string type", 1);
+			__cstr_debug(CSTR_DEBUG_INVALID_STRING_TYPE);
 			return;
 	}
 }
@@ -224,7 +221,7 @@ inline void __cstr_set_relsiz(const cstr_const_t p, cstr_wrapper val, enum cstr_
 			return;
 #endif
 		default:
-			__cstr_debug("__cstr_set_relsiz", "Invalid string type", 1);
+			__cstr_debug(CSTR_DEBUG_INVALID_STRING_TYPE);
 			return;
 	}
 }
@@ -279,7 +276,7 @@ inline header_cnt __cstr_header_from(void* p, enum cstr_tt type)
 			};
 #endif
 		default:
-			__cstr_debug("__cstr_header_from", "Invalid string type", 1);
+			__cstr_debug(CSTR_DEBUG_INVALID_STRING_TYPE);
 	}
 }
 
@@ -362,7 +359,7 @@ inline void* __cstr_set_header(void* p , struct alloc_man* man, enum cstr_tt typ
 			return (void*)(tmp3 + 1);
 #endif
 		default:
-			__cstr_debug("__cstr_set_header", "Invalid string type", 1);
+			__cstr_debug(CSTR_DEBUG_INVALID_STRING_TYPE);
 			
 	}
 }
@@ -403,7 +400,7 @@ inline void* __cstr_set_header_wh(void* p, header_cnt* head, enum cstr_tt type)
 			return (void*)(tmp3 + 1);
 #endif
 		default:
-			__cstr_debug("__cstr_set_header_wh", "Invalid string type", 1);
+			__cstr_debug(CSTR_DEBUG_INVALID_STRING_TYPE);
 	}
 }
 
@@ -471,7 +468,7 @@ cstr_t ncstr_mt()
 		return (char*)_alloc + man.datoff;
 	}
 	else 
-		__cstr_debug("ncstr_mt", "Allocation failure", 2);
+		__cstr_debug(CSTR_DEBUG_ALLOC_FAILURE);
 }
 
 __attribute__((warn_unused_result))
@@ -486,7 +483,7 @@ cstr_t ncstr_new(size_t nbytes)
 		return _return;
 	}
 	else
-		__cstr_debug("ncstr_new", "Allocation failure", 2);
+		__cstr_debug(CSTR_DEBUG_ALLOC_FAILURE);
 }
 
 __attribute__((warn_unused_result))
@@ -503,7 +500,7 @@ cstr_t ncstr_from(const char* s)
 		return _return;
 	}
 	else
-		__cstr_debug("ncstr_from", "Allocation failure", 2);
+		__cstr_debug(CSTR_DEBUG_ALLOC_FAILURE);
 }
 
 __attribute__((warn_unused_result))
@@ -517,7 +514,7 @@ cstr_t ncstrcpy(cstr_t p)
 		return (char*)_alloc + man.datoff;
 	}
 	else
-		__cstr_debug("ncstrcpy", "Allocation failure", 2);
+		__cstr_debug(CSTR_DEBUG_ALLOC_FAILURE);
 }
 
 __attribute__((warn_unused_result))
@@ -547,7 +544,7 @@ void __cstr_resize_from(cstr_t* p, const char* src, size_t capacity, int create)
 		struct alloc_man man = __cstr_getman(capacity);
 		uint8_t* _alloc = (uint8_t*) CSTR_MALLOC(man.nofblk);
 		if (!_alloc)
-			__cstr_debug("cstr_resize","Allocation failed", 2);
+			__cstr_debug(CSTR_DEBUG_ALLOC_FAILURE);
 		*p = __cstr_set_header(_alloc, &man, man.type);
 		if (src)
 			memcpy(*p, src, capacity);
@@ -575,7 +572,7 @@ void __cstr_resize_from(cstr_t* p, const char* src, size_t capacity, int create)
 	{
 		uint8_t* _alloc = (uint8_t*) CSTR_REALLOC(head, man.nofblk);
 		if (!_alloc)
-			__cstr_debug("cstr_resize", "Allocation failed", 2);
+			__cstr_debug(CSTR_DEBUG_ALLOC_FAILURE);
 		_alloc[man.nofblk - 1] = '\0';
 		*p = __cstr_set_header(_alloc, &man, man.type);
 		if (src)
@@ -590,7 +587,7 @@ void __cstr_resize_from(cstr_t* p, const char* src, size_t capacity, int create)
 	{
 		uint8_t* _alloc = (uint8_t*) CSTR_REALLOC(*p, man.nofblk);
 		if (!_alloc)
-			__cstr_debug("cstr_resize", "Allocation failed", 2);
+			__cstr_debug(CSTR_DEBUG_ALLOC_FAILURE);
 		*p = __cstr_set_header(_alloc, &man, man.type);
 		if (src)
 		{
@@ -622,7 +619,7 @@ void cstr_trim(cstr_t* p)
 	{
 		uint8_t* _alloc = (uint8_t*) CSTR_REALLOC(*p, man.nofblk);
 		if (!_alloc)
-			__cstr_debug("cstr_trim", "Allocation failed", 2);
+			__cstr_debug(CSTR_DEBUG_ALLOC_FAILURE);
 		_alloc[man.nofblk - 1] = '\0';
 		*p = (char*)_alloc + man.datoff;
 		return;
@@ -631,7 +628,7 @@ void cstr_trim(cstr_t* p)
 	{
 		uint8_t* _alloc = (uint8_t*) CSTR_REALLOC(*p, man.nofblk);
 		if (!_alloc)
-			__cstr_debug("cstr_trim", "Allocation failed", 2);
+			__cstr_debug(CSTR_DEBUG_ALLOC_FAILURE);
 		memmove(_alloc + __cstr_datoff(otype), _alloc + man.datoff, man.relsiz);
 		_alloc[man.nofblk - 1] = '\0';
 		__cstr_set_header(_alloc, &man, man.type);

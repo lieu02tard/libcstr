@@ -173,7 +173,6 @@ extern inline void cstr_reeval(const cstr_const_t);
 #define __get_cstr_inner_func
 
 #define __CSTR_TYPE_MASK 0x03
-extern inline void __cstr_debug(const char* title, const char* content, int code);
 
 extern inline enum cstr_tt __cstr_type(const cstr_const_t);
 extern inline void* __cstr_head(const cstr_const_t, enum cstr_tt);

@@ -18,6 +18,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef _CSTR_DEBUG_H_
 #define _CSTR_DEBUG_H_
 
+#include "config.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -35,7 +37,13 @@ extern inline void __cstr_print_debug(const char* title, const char* content);
 extern inline void __cstr_print_title(const char* title);
 #endif
 
-extern inline void __cstr_debug(const char* title, const char* content, int code);
+enum CSTR_DEBUG_CODE {
+	CSTR_DEBUG_NOTHING = 0x00,
+	CSTR_DEBUG_INVALID_STRING_TYPE,
+	CSTR_DEBUG_ALLOC_FAILURE,
+	CSTR_DEBUG_OUT_OF_INDEX
+};
+extern inline void __cstr_debug(enum CSTR_DEBUG_CODE);
 #ifdef __cplusplus
 }
 #endif

@@ -26,5 +26,4 @@
 	#define HAVE_64_BITS
 #endif
 
-
 #endif
