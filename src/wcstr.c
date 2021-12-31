@@ -16,21 +16,22 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 #define __need_struct
 #define __need_wcstr_inner_func
+
+#include "config.h"
 #include "wcstr.h"
 
 #include <wchar.h>
 #include <stdlib.h>
-#ifdef Wwcstr_DEBUG
-	#include <stdio.h>
-	#include "wcstr_dbg.h"
-#endif
+
+#include "cstr_dbg.h"
+
 #include <string.h>
 #include <errno.h>
 
 #define HEADER_TYPE(n) struct head##n
 
 /* -----------Inner function------------*/
-
+__attribute__((always_inline))
 inline enum wcstr_tt __wcstr_type(const wcstr_const_t p)
 {
 	return *((uint8_t*)(p) - 1) & __CSTR_TYPE_MASK;
@@ -43,11 +44,13 @@ inline enum wcstr_tt __wcstr_type(const wcstr_const_t p)
  *
  * Return the position that is allocate for string @p
  */
+__attribute__((always_inline))
 inline void* __wcstr_head(const wcstr_const_t p , enum wcstr_tt type)
 {
 	return (void*)p - __wcstr_datoff(type);
 }
 
+__attribute__((always_inline))
 inline enum wcstr_tt __wcstr_type_wn(size_t n)
 {
 #ifdef HAVE_64_BITS
@@ -62,6 +65,7 @@ inline enum wcstr_tt __wcstr_type_wn(size_t n)
 #endif
 }
 
+__attribute__((always_inline))
 inline wcstr_lower __wcstr_nofbuf(const wcstr_const_t p, enum wcstr_tt type)
 {
 	switch (type)
@@ -77,7 +81,8 @@ inline wcstr_lower __wcstr_nofbuf(const wcstr_const_t p, enum wcstr_tt type)
 			return ((HEADER_TYPE(3)*)p - 1)->nofbuf;
 #endif
 		default:
-			__wcstr_debug("__cstr_nofbuf", "Invalid string type", 1);
+			__cstr_debug(CSTR_DEBUG_INVALID_STRING_TYPE);
+			
 	}
 }
 
@@ -96,7 +101,7 @@ inline wcstr_wrapper __wcstr_relsiz(const wcstr_const_t p, enum wcstr_tt type)
 			return ((HEADER_TYPE(3)*)p - 1)->relsiz;
 #endif
 		default:
-			__wcstr_debug("__cstr_relsiz", "Invalid string type", 1);
+			__cstr_debug(CSTR_DEBUG_INVALID_STRING_TYPE);
 	}
 }
 
@@ -115,7 +120,7 @@ inline wcstr_lower __wcstr_flag(const wcstr_const_t p, enum wcstr_tt type)
 			return ((HEADER_TYPE(3)*)p - 1)->flag;
 #endif
 		default:
-			__wcstr_debug("__cstr_flag", "Invalid string type", 1);
+			__cstr_debug(CSTR_DEBUG_INVALID_STRING_TYPE);
 	}
 }
 
@@ -134,7 +139,7 @@ inline wcstr_lower __wcstr_datoff(enum wcstr_tt type)
 			return sizeof(HEADER_TYPE(3));
 #endif
 		default:
-			__wcstr_debug("__cstr_datoff", "Invalid string type", 1);
+			__cstr_debug(CSTR_DEBUG_INVALID_STRING_TYPE);
 	}
 }
 
@@ -158,7 +163,7 @@ inline wcstr_lower __wcstr_datbuf(enum wcstr_tt type)
 			return T3_BUFFER;
 #endif
 		default:
-			__wcstr_debug("__cstr_datbuf", "Invalid string type", 1);
+			__cstr_debug(CSTR_DEBUG_INVALID_STRING_TYPE);
 	}
 }
 
@@ -186,7 +191,7 @@ inline void __wcstr_set_nofbuf(const wcstr_const_t p, wcstr_lower val, enum wcst
 			return;
 #endif
 		default:
-			__wcstr_debug("__cstr_set_nofbuf", "Invalid string type", 1);
+			__cstr_debug(CSTR_DEBUG_INVALID_STRING_TYPE);
 			return;
 	}
 }
@@ -210,7 +215,7 @@ inline void __wcstr_set_relsiz(const wcstr_const_t p, wcstr_wrapper val, enum wc
 			return;
 #endif
 		default:
-			__wcstr_debug("__cstr_set_relsiz", "Invalid string type", 1);
+			__cstr_debug(CSTR_DEBUG_INVALID_STRING_TYPE);
 			return;
 	}
 }
@@ -263,7 +268,7 @@ inline header_cnt __wcstr_header_from(void* p, enum wcstr_tt type)
 			};
 #endif
 		default:
-			__wcstr_debug("__cstr_header_from", "Invalid string type", 1);
+			__wcstr_debug(CSTR_DEBUG_INVALID_STRING_TYPE);
 	}
 }
 
@@ -307,30 +312,31 @@ inline struct alloc_man __wcstr_getman_wh(header_cnt head, enum wcstr_tt type)
 	return _return;
 }
 
-inline void* __wcstr_set_header(void* p , struct alloc_man man, enum wcstr_tt type)
+__attribute__((always_inline))
+inline void* __wcstr_set_header(void* p , struct alloc_man* man, enum wcstr_tt type)
 {
 	switch(type)
 	{
 		case WCSTR_TYPE_0:
 			while(0) {}
 			HEADER_TYPE(0) *tmp0 = (HEADER_TYPE(0)*)p;
-			tmp0->nofbuf	= man.nofbuf;
-			tmp0->relsiz	= man.relsiz;
-			tmp0->flag		= *((uint8_t*)&man.flag + sizeof(man.flag) - 1);
+			tmp0->nofbuf	= man->nofbuf;
+			tmp0->relsiz	= man->relsiz;
+			tmp0->flag		= *((uint8_t*)&man->flag + sizeof(man->flag) - 1);
 			return (void*)(tmp0 + 1);
 		case WCSTR_TYPE_1:
 			while(0){}
 			HEADER_TYPE(1) *tmp1 = (HEADER_TYPE(1)*)p;
-			tmp1->nofbuf	= man.nofbuf;
-			tmp1->relsiz	= man.relsiz;
-			tmp1->flag		= *((uint8_t*)&man.flag + sizeof(man.flag) - 1);
+			tmp1->nofbuf	= man->nofbuf;
+			tmp1->relsiz	= man->relsiz;
+			tmp1->flag		= *((uint8_t*)&man->flag + sizeof(man->flag) - 1);
 			return (void*)(tmp1 + 1);
 		case WCSTR_TYPE_2:
 			while(0){}
 			HEADER_TYPE(2) *tmp2 = (HEADER_TYPE(2)*)p;
-			tmp2->nofbuf	= man.nofbuf;
-			tmp2->relsiz	= man.relsiz;
-			tmp2->flag		= *((uint8_t*)&man.flag + sizeof(man.flag) - 1);
+			tmp2->nofbuf	= man->nofbuf;
+			tmp2->relsiz	= man->relsiz;
+			tmp2->flag		= *((uint8_t*)&man->flag + sizeof(man->flag) - 1);
 			return (void*)(tmp2 + 1);
 #ifdef HAVE_64_BITS
 		case WCSTR_TYPE_3:
@@ -338,51 +344,52 @@ inline void* __wcstr_set_header(void* p , struct alloc_man man, enum wcstr_tt ty
 			HEADER_TYPE(3) *tmp3 = (HEADER_TYPE(3)*)p;
 			tmp3->nofbuf	= man.nofbuf;
 			tmp3->relsiz	= man.relsiz;
-			tmp3->flag		= *((uint8_t*)&man.flag + sizeof(man.flag) - 1);
+			tmp3->flag		= *((uint8_t*)&man->flag + sizeof(man->flag) - 1);
 			return (void*)(tmp3 + 1);
 #endif
 		default:
-			__wcstr_debug("__cstr_set_header", "Invalid string type", 1);
+			__cstr_debug(CSTR_DEBUG_INVALID_STRING_TYPE);
 			
 	}
 }
 
-inline void* __wcstr_set_header_wh(void* p, header_cnt head, enum wcstr_tt type)
+__attribute__((always_inline))
+inline void* __wcstr_set_header_wh(void* p, header_cnt* head, enum wcstr_tt type)
 {
 	switch (type)
 	{
 		case WCSTR_TYPE_0:
 			while(0){}
 			HEADER_TYPE(0) *tmp0 = (HEADER_TYPE(0)*)p;
-			tmp0->nofbuf	= head.nofbuf;
-			tmp0->relsiz	= head.relsiz;
-			tmp0->flag		= *((uint8_t*)&head.flag + sizeof(head.flag) - 1);
+			tmp0->nofbuf	= head->nofbuf;
+			tmp0->relsiz	= head->relsiz;
+			tmp0->flag		= *((uint8_t*)&head->flag + sizeof(head->flag) - 1);
 			return (void*)(tmp0 + 1);
 		case WCSTR_TYPE_1:
 			while(0){}
 			HEADER_TYPE(1) *tmp1 = (HEADER_TYPE(1)*)p;
-			tmp1->nofbuf	= head.nofbuf;
-			tmp1->relsiz	= head.relsiz;
-			tmp1->flag		= *((uint16_t*)&head.flag + sizeof(head.flag) - 1);
+			tmp1->nofbuf	= head->nofbuf;
+			tmp1->relsiz	= head->relsiz;
+			tmp1->flag		= *((uint16_t*)&head->flag + sizeof(head->flag) - 1);
 			return (void*)(tmp1 + 1);
 		case WCSTR_TYPE_2:
 			while(0){}
 			HEADER_TYPE(2) *tmp2 = (HEADER_TYPE(2)*)p;
-			tmp2->nofbuf	= head.nofbuf;
-			tmp2->relsiz	= head.relsiz;
-			tmp2->flag		= *((uint32_t*)&head.flag + sizeof(head.flag) - 1);
+			tmp2->nofbuf	= head->nofbuf;
+			tmp2->relsiz	= head->relsiz;
+			tmp2->flag		= *((uint32_t*)&head->flag + sizeof(head->flag) - 1);
 			return (void*)(tmp2 + 1);
 #ifdef HAVE_64_BITS
 		case WCSTR_TYPE_3:
 			while(0){}
 			HEADER_TYPE(3) *tmp3 = (HEADER_TYPE(3)*)p;
-			tmp3->nofbuf	= head.nofbuf;
-			tmp3->relsiz	= head.relsiz;
-			tmp3->flag		= *((uint64_t*)&head.flag + sizeof(head.flag) - 1);
+			tmp3->nofbuf	= head->nofbuf;
+			tmp3->relsiz	= head->relsiz;
+			tmp3->flag		= *((uint64_t*)&head->flag + sizeof(head->flag) - 1);
 			return (void*)(tmp3 + 1);
 #endif
 		default:
-			__wcstr_debug("__cstr_set_header_wh", "Invalid string type", 1);
+			__cstr_debug(CSTR_DEBUG_INVALID_STRING_TYPE);
 	}
 }
 
@@ -441,12 +448,12 @@ wcstr_t nwcstr_mt()
 	WCHAR_TYPE* _alloc = (WCHAR_TYPE*) CSTR_MALLOC(man.nofblk * sizeof(WCHAR_TYPE));
 	if (_alloc)
 	{
-		__wcstr_set_header((void*)_alloc, man, WCSTR_TYPE_0);
+		__wcstr_set_header((void*)_alloc, &man, WCSTR_TYPE_0);
 		_alloc[man.nofblk - 1] = '\0';
 		return (wcstr_t)(_alloc + man.datoff);
 	}
 	else 
-		__wcstr_debug("ncstr_mt", "Allocation failure", 2);
+		__cstr_debug(CSTR_DEBUG_ALLOC_FAILURE);
 }
 
 __attribute__((warn_unused_result))
@@ -456,12 +463,12 @@ wcstr_t nwcstr_new(size_t nbytes)
 	WCHAR_TYPE* _alloc = (WCHAR_TYPE*) CSTR_MALLOC(man.nofblk * sizeof(WCHAR_TYPE));
 	if (_alloc)
 	{
-		wcstr_t _return = (wcstr_t)__wcstr_set_header((void*)_alloc, man, man.type);
+		wcstr_t _return = (wcstr_t)__wcstr_set_header((void*)_alloc, &man, man.type);
 		_alloc[man.nofblk - 1] = '\0';
 		return _return;
 	}
 	else
-		__wcstr_debug("ncstr_new", "Allocation failure", 2);
+		__cstr_debug(CSTR_DEBUG_ALLOC_FAILURE);
 }
 
 __attribute__((warn_unused_result))
@@ -472,13 +479,13 @@ wcstr_t nwcstr_from(const WCHAR_TYPE* s)
 	WCHAR_TYPE* _alloc = (WCHAR_TYPE*) CSTR_MALLOC(man.nofblk * sizeof(WCHAR_TYPE));
 	if (_alloc)
 	{
-		wcstr_t _return = (wcstr_t)__wcstr_set_header((void*)_alloc, man, man.type);
+		wcstr_t _return = (wcstr_t)__wcstr_set_header((void*)_alloc, &man, man.type);
 		memcpy(_return, s, len * sizeof(WCHAR_TYPE));
 		_alloc[man.nofblk - 1] = '\0';
 		return _return;
 	}
 	else
-		__wcstr_debug("ncstr_from", "Allocation failure", 2);
+		__cstr_debug(CSTR_DEBUG_ALLOC_FAILURE);
 }
 
 __attribute__((warn_unused_result))
@@ -492,7 +499,7 @@ wcstr_t nwcstrcpy(wcstr_t p)
 		return _alloc + man.datoff;
 	}
 	else
-		__wcstr_debug("ncstrcpy", "Allocation failure", 2);
+		__cstr_debug(CSTR_DEBUG_ALLOC_FAILURE);
 }
 
 __attribute__((warn_unused_result))
@@ -522,8 +529,8 @@ void __wcstr_resize_from(wcstr_t* p, const WCHAR_TYPE* src, size_t capacity, int
 		struct alloc_man man = __wcstr_getman(capacity);
 		wcstr_t _alloc = (wcstr_t) CSTR_MALLOC(man.nofblk * sizeof(WCHAR_TYPE));
 		if (!_alloc)
-			__wcstr_debug("cstr_resize","Allocation failed", 2);
-		*p = __wcstr_set_header(_alloc, man, man.type);
+			__wcstr_debug(CSTR_DEBUG_ALLOC_FAILURE);
+		*p = __wcstr_set_header(_alloc, &man, man.type);
 		if (src)
 			memcpy(*p, src, capacity * sizeof(WCHAR_TYPE));
 		_alloc[man.nofblk - 1] = '\0';
@@ -549,9 +556,9 @@ void __wcstr_resize_from(wcstr_t* p, const WCHAR_TYPE* src, size_t capacity, int
 	{
 		wcstr_t _alloc = (wcstr_t) CSTR_REALLOC(head, man.nofblk * sizeof(WCHAR_TYPE));
 		if (!_alloc)
-			__wcstr_debug("cstr_resize", "Allocation failed", 2);
+			__cstr_debug(CSTR_DEBUG_ALLOC_FAILURE);
 		_alloc[man.nofblk - 1] = '\0';
-		*p = __wcstr_set_header(_alloc, man, man.type);
+		*p = __wcstr_set_header(_alloc, &man, man.type);
 		if (src)
 		{
 			size_t tmp = wcsnlen(src, BUFSIZ);
@@ -564,8 +571,8 @@ void __wcstr_resize_from(wcstr_t* p, const WCHAR_TYPE* src, size_t capacity, int
 	{
 		wcstr_t _alloc = (wcstr_t) CSTR_REALLOC(*p, man.nofblk * sizeof(WCHAR_TYPE));
 		if (!_alloc)
-			__wcstr_debug("cstr_resize", "Allocation failed", 2);
-		*p = __wcstr_set_header(_alloc, man, man.type);
+			__cstr_debug(CSTR_DEBUG_ALLOC_FAILURE);
+		*p = __wcstr_set_header(_alloc, &man, man.type);
 		if (src)
 		{
 			size_t tmp = wcsnlen(src, BUFSIZ);
@@ -596,7 +603,7 @@ void wcstr_trim(wcstr_t* p)
 	{
 		wcstr_t _alloc = (wcstr_t) CSTR_REALLOC(*p, man.nofblk * sizeof(WCHAR_TYPE));
 		if (!_alloc)
-			__wcstr_debug("cstr_trim", "Allocation failed", 2);
+			__cstr_debug(CSTR_DEBUG_ALLOC_FAILURE);
 		_alloc[man.nofblk - 1] = '\0';
 		*p = _alloc + man.datoff;
 		return;
@@ -605,7 +612,7 @@ void wcstr_trim(wcstr_t* p)
 	{
 		wcstr_t _alloc = (wcstr_t) CSTR_REALLOC(*p, man.nofblk * sizeof(WCHAR_TYPE));
 		if (!_alloc)
-			__wcstr_debug("cstr_trim", "Allocation failed", 2);
+			__cstr_debug(CSTR_DEBUG_ALLOC_FAILURE);
 		memmove(_alloc + __wcstr_datoff(otype), _alloc + man.datoff, man.relsiz * sizeof(WCHAR_TYPE));
 		_alloc[man.nofblk - 1] = '\0';
 		__wcstr_set_header(_alloc, man, man.type);

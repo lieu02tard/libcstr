@@ -16,6 +16,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 #ifndef _CSTR_UTILITY_H_
 #define _CSTR_UTILITY_H_
+#include "config.h"
 #include "wcstr.h"
 
 #ifdef __cplusplus

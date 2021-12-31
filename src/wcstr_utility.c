@@ -16,14 +16,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 #define __need_struct
 #define __need_wcstr_inner_func
+
+#include "config.h"
 #include "wcstr_utility.h"
 
 #include <string.h>
 #include <stdlib.h>
-#ifdef CSTR_DEBUG
-	#include <stdio.h>
-	#include "cstr_dbg.h"
-#endif
+#include "cstr_dbg.h"
 
 #define MIN(a, b) ((a < b) ? a : b)
 WCHAR_TYPE* wcstrcpy(wcstr_t *dest, wcstr_t *src)

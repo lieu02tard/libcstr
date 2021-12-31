@@ -27,7 +27,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef FLIB_WCSTR_H
 #define FLIB_WCSTR_H
 
-
+#include "config.h"
 #include <stdint.h>
 #include <stddef.h>
 
@@ -35,32 +35,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 	#define BUFSIZ 8192
 #endif
 
-#ifndef CSTR_MALLOC
-	#define CSTR_MALLOC malloc
-#endif
-
-#ifndef CSTR_CALLOC
-	#define CSTR_CALLOC calloc
-#endif
-
-#ifndef CSTR_REALLOC
-	#define CSTR_REALLOC realloc
-#endif
-
-#ifndef CST_FREE
-	#define CSTR_FREE free
-#endif
-
-#ifdef __LP64__
-	#define HAVE_64_BITS
-#endif
 
 #ifndef WCHAR_TYPE
 #define WCHAR_TYPE wchar_t
 #endif
 
-typedef wchar_t* wcstr_t;
-typedef const wchar_t* wcstr_const_t;
+typedef WCHAR_TYPE* wcstr_t;
+typedef const WCHAR_TYPE* wcstr_const_t;
 
 #ifdef __cplusplus
 extern "C" {
@@ -132,8 +113,12 @@ typedef struct head3 header_cnt;
 typedef struct head2 header_cnt;
 #endif
 
-typedef intmax_t wcstr_wrapper;
-typedef int wcstr_lower;
+#ifdef HAVE_64_BITS
+typedef uintmax_t wcstr_wrapper;
+#else
+typedef unsigned int wcstr_wrapper;
+#endif
+typedef unsigned int wcstr_lower;
 
 struct alloc_man {
 	wcstr_wrapper	relsiz;
@@ -178,7 +163,6 @@ extern inline void wcstr_reeval(const wcstr_const_t);
 #define __get_wcstr_inner_func
 
 #define __CSTR_TYPE_MASK 0x03
-extern inline void __wcstr_debug(const char* title, const char* content, int code);
 
 extern inline enum wcstr_tt __wcstr_type(const wcstr_const_t);
 extern inline void* __cstr_head(const wcstr_const_t, enum wcstr_tt);
@@ -204,8 +188,8 @@ extern inline header_cnt __wcstr_header(const wcstr_const_t, enum wcstr_tt);
 extern inline struct alloc_man __wcstr_getman(size_t);
 extern inline struct alloc_man __wcstr_getman_wp(const wcstr_const_t, enum wcstr_tt);
 extern inline struct alloc_man __wcstr_getman_wh(header_cnt, enum wcstr_tt);
-extern inline void* __wcstr_set_header(void*, struct alloc_man, enum wcstr_tt);
-extern inline void* __wcstr_set_header_wh(void*, header_cnt, enum wcstr_tt);
+extern inline void* __wcstr_set_header(void*, struct alloc_man*, enum wcstr_tt);
+extern inline void* __wcstr_set_header_wh(void*, header_cnt*, enum wcstr_tt);
 
 extern inline wcstr_lower __wcstr_toflag(enum wcstr_tt);
 extern inline enum wcstr_tt __wcstr_from_flag(wcstr_lower);
