@@ -30,6 +30,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #define HEADER_TYPE(n) struct head##n
 
 /* -----------Inner function------------*/
+
+/**
+ * __cstr_type - Return type of a &cstr_t string
+ * @p:		String
+ *
+ * Return type of string
+ */
 __attribute__((always_inline))
 inline enum cstr_tt __cstr_type(const cstr_const_t p)
 {
@@ -49,6 +56,12 @@ inline void* __cstr_head(const cstr_const_t p , enum cstr_tt type)
 	return (void*)p - __cstr_datoff(type);
 }
 
+/**
+ * __cstr_type_wn - return type (with number)
+ * @n:		size of string
+ *
+ * Return type of string that @n characters fit in
+ */
 __attribute__((always_inline))
 inline enum cstr_tt __cstr_type_wn(size_t n)
 {
@@ -64,6 +77,13 @@ inline enum cstr_tt __cstr_type_wn(size_t n)
 #endif
 }
 
+/**
+ * __cstr_nofbuf - get nofbuf metadata
+ * @p:		string
+ * @type:	type of string
+ *
+ * Return nofbuf metadata
+ */
 __attribute__((always_inline))
 inline cstr_lower __cstr_nofbuf(const cstr_const_t p, enum cstr_tt type)
 {
@@ -84,6 +104,13 @@ inline cstr_lower __cstr_nofbuf(const cstr_const_t p, enum cstr_tt type)
 	}
 }
 
+/**
+ * __cstr_relsiz - get relsiz metadata
+ * @p:		string
+ * @type:	type of string
+ *
+ * return relsiz metadata
+ */
 __attribute__((always_inline))
 inline cstr_wrapper __cstr_relsiz(const cstr_const_t p, enum cstr_tt type)
 {
@@ -104,6 +131,13 @@ inline cstr_wrapper __cstr_relsiz(const cstr_const_t p, enum cstr_tt type)
 	}
 }
 
+/**
+ * __cstr_flag - get flag
+ * @p:		string
+ * @type:	type of string
+ *
+ * return flag metadata
+ */
 __attribute__((always_inline))
 inline cstr_lower __cstr_flag(const cstr_const_t p, enum cstr_tt type)
 {
@@ -124,6 +158,12 @@ inline cstr_lower __cstr_flag(const cstr_const_t p, enum cstr_tt type)
 	}
 }
 
+/**
+ * __cstr_datoff - get data offset (of type)
+ * @type:	type
+ *
+ * return data offset (or the size of header/metadata) of certain type
+ */
 __attribute__((always_inline))
 inline cstr_lower __cstr_datoff(enum cstr_tt type)
 {
@@ -144,12 +184,24 @@ inline cstr_lower __cstr_datoff(enum cstr_tt type)
 	}
 }
 
+/**
+ * __cstr_datoff_wn - get data offsert (of number)
+ * @nbytes:		size
+ *
+ * return data offsert of the string that fit @nbytes of characters
+ */
 __attribute__((always_inline))
 inline cstr_lower __cstr_datoff_wn(size_t nbytes)
 {
 	return __cstr_datoff(__cstr_type_wn(nbytes));
 }
 
+/**
+ * __cstr_datbuf - get data buffer (of type)
+ * @type:		type
+ *
+ * return buffer size of a certain type
+ */
 __attribute__((always_inline))
 inline cstr_lower __cstr_datbuf(enum cstr_tt type)
 {
@@ -170,12 +222,26 @@ inline cstr_lower __cstr_datbuf(enum cstr_tt type)
 	}
 }
 
+/**
+ * __cstr_datbuf_wn - get data buffer (of number)
+ * @nbytes:		size
+ *
+ * return buffer size of certain string size
+ */
 __attribute__((always_inline))
 inline cstr_lower __cstr_datbuf_wn(size_t nbytes)
 {
 	return __cstr_datbuf(__cstr_type_wn(nbytes));
 }
 
+/**
+ * __cstr_set_nofbuf - set nofbuf metadata
+ * @p:			string
+ * @val:		value to set
+ * @type:		type of string
+ *
+ * set nofbuf metadata
+ */
 __attribute__((always_inline))
 inline void __cstr_set_nofbuf(const cstr_const_t p, cstr_lower val, enum cstr_tt type)
 {
@@ -201,6 +267,14 @@ inline void __cstr_set_nofbuf(const cstr_const_t p, cstr_lower val, enum cstr_tt
 	}
 }
 
+/**
+ * __cstr_set_relsiz - set relsiz metadata
+ * @p:			string
+ * @val:		value to set
+ * @type:		type of string
+ *
+ * set relsiz metadata
+ */
 __attribute__((always_inline))
 inline void __cstr_set_relsiz(const cstr_const_t p, cstr_wrapper val, enum cstr_tt type)
 {
@@ -226,19 +300,33 @@ inline void __cstr_set_relsiz(const cstr_const_t p, cstr_wrapper val, enum cstr_
 	}
 }
 
+/**
+ * __cstr_header - get header of string
+ * @p:		string
+ * @type:	type of string
+ *
+ * get &header_cnt header of a string
+ */
 __attribute__((always_inline))
 inline header_cnt __cstr_header(const cstr_const_t p, enum cstr_tt type)
 {
 	return __cstr_header_from(__cstr_head(p, type), type);
 }
 
+/**
+ * __cstr_header_from - get header from certain memory pointer
+ * @p:		pointer to the header memory
+ * @type:	type of header/string
+ *
+ * get &header_cnt encapsulate from certain memory location
+ */
 __attribute__((always_inline))
 inline header_cnt __cstr_header_from(void* p, enum cstr_tt type)
 {
 	switch (type)
 	{
 		case CSTR_TYPE_0:
-			while(0){}
+			while(0){}	// Some C grammar require a Label must be followed by an expression, not a declaration. The compiler should be able to optiomize out this
 			HEADER_TYPE(0) *tmp1 = (HEADER_TYPE(0)*)p;
 			return (header_cnt)
 			{
@@ -280,6 +368,12 @@ inline header_cnt __cstr_header_from(void* p, enum cstr_tt type)
 	}
 }
 
+/**
+ * __cstr_getman - Get alloc_man from size
+ * @nbytes:		size
+ *
+ * Get alloc_man for string of size @nbytes
+ */
 __attribute__((always_inline))
 inline struct alloc_man __cstr_getman(size_t nbytes)
 {
@@ -295,6 +389,13 @@ inline struct alloc_man __cstr_getman(size_t nbytes)
 	return _return;
 }
 
+/**
+ * __cstr_getman - Get alloc_man from a string
+ * @p:			string
+ * @type:		string type
+ *
+ * Get allocation manual for a string
+ */
 __attribute__((always_inline))
 inline struct alloc_man __cstr_getman_wp(const cstr_const_t p, enum cstr_tt type)
 {
@@ -309,6 +410,13 @@ inline struct alloc_man __cstr_getman_wp(const cstr_const_t p, enum cstr_tt type
 	return _return;
 }
 
+/**
+ * __cstr_getman_wh - get alloc_man from a header
+ * @head:		header
+ * @type:		header type
+ *
+ * get allocation manual for a header
+ */
 __attribute__((always_inline))
 inline struct alloc_man __cstr_getman_wh(header_cnt head, enum cstr_tt type)
 {
@@ -323,6 +431,14 @@ inline struct alloc_man __cstr_getman_wh(header_cnt head, enum cstr_tt type)
 	return _return;
 }
 
+/**
+ * __cstr_set_header - set header
+ * @p:			header position
+ * @man:		pointer to &alloc_man to allocate
+ * @type:		type of string
+ *
+ * set header at position @p to @man's content
+ */
 __attribute__((always_inline))
 inline void* __cstr_set_header(void* p , struct alloc_man* man, enum cstr_tt type)
 {
@@ -364,6 +480,14 @@ inline void* __cstr_set_header(void* p , struct alloc_man* man, enum cstr_tt typ
 	}
 }
 
+/**
+ * __cstr_set_header_wh - set header from &header_cnt struct
+ * @p:		header position
+ * @head:	header struct
+ * @type:	header type
+ *
+ * set header at position @p to @head's content
+ */
 __attribute__((always_inline))
 inline void* __cstr_set_header_wh(void* p, header_cnt* head, enum cstr_tt type)
 {
@@ -404,6 +528,12 @@ inline void* __cstr_set_header_wh(void* p, header_cnt* head, enum cstr_tt type)
 	}
 }
 
+/**
+ * __cstr_toflag - convert type to flag
+ * @type:		type
+ *
+ * Convert @type to useable flag in a header
+ */
 __attribute__((always_inline))
 inline cstr_lower __cstr_toflag(enum cstr_tt type)
 {
@@ -413,6 +543,12 @@ inline cstr_lower __cstr_toflag(enum cstr_tt type)
 	return tmp;
 }
 
+/**
+ * __cstr_from_flag - convert flag to type
+ * @flag:		flag
+ *
+ * Convert raw @flag to type
+ */
 __attribute__((always_inline))
 inline enum cstr_tt __cstr_from_flag(cstr_lower flag)
 {
@@ -420,6 +556,13 @@ inline enum cstr_tt __cstr_from_flag(cstr_lower flag)
 	return *ret;
 }
 
+/**
+ * __cstr_nof_buffer - count the number of buffer to allocate
+ * @nbytes:		size
+ * @type:		type
+ *
+ * Count the number of buffer to allocate for @nbytes characters
+ */
 __attribute__((always_inline))
 inline cstr_lower __cstr_nof_buffer(size_t nbytes, enum cstr_tt type)
 {
