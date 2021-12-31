@@ -33,10 +33,7 @@ int main(int argc, const char* argv[])
 		"Never gonna tell a lie\n"
 		"And desert you\n";
 	int fdin = fileno(stdin);
-	cstr_t cstr0 = ncstr_from("Never gonna give you up\n");
-	size_t index = 0;
-	cstr_getline(&cstr0, 32, &index, fdin, WRITE_OVERWRITE);
-	/*for (int i = RUN_LIMIT; i; i--)
+	for (int i = RUN_LIMIT; i; i--)
 	{
 		cstr_t cstr_1 = ncstr_from("Never gonna give you up\n");
 		puts("String 1\n"); cstr_puts(cstr_1, 0, fd);
@@ -65,7 +62,7 @@ int main(int argc, const char* argv[])
 		cstr_free(cstr_4);
 		cstr_free(cstr_5);
 
-	}*/
+	}
 	clock_t runtime = clock();
 	printf("Running time: %ld\n", runtime);
 }

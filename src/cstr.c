@@ -423,7 +423,21 @@ inline enum cstr_tt __cstr_from_flag(cstr_lower flag)
 __attribute__((always_inline))
 inline cstr_lower __cstr_nof_buffer(size_t nbytes, enum cstr_tt type)
 {
-	return nbytes/__cstr_datbuf(type) + 1;
+	switch (type)
+	{
+		case CSTR_TYPE_0:
+			return (nbytes >> T0_MASK) + 1;
+		case CSTR_TYPE_1:
+			return (nbytes >> T1_MASK) + 1;
+		case CSTR_TYPE_2:
+			return (nbytes >> T2_MASK) + 1;
+#ifdef HAVE_64_BITS
+		case CSTR_TYPE_3:
+			return (nbytes >> T3_MASK) + 1;
+#endif
+		default:
+			__cstr_debug(CSTR_DEBUG_INVALID_STRING_TYPE);
+	}
 }
 
 __attribute__((always_inline))
