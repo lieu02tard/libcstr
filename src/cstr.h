@@ -27,7 +27,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef FLIB_CSTR_H
 #define FLIB_CSTR_H
 
-
+#include "config.h"
 #include <stdint.h>
 #include <stddef.h>
 
@@ -35,25 +35,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 	#define BUFSIZ 8192
 #endif
 
-#ifndef CSTR_MALLOC
-	#define CSTR_MALLOC malloc
-#endif
 
-#ifndef CSTR_CALLOC
-	#define CSTR_CALLOC calloc
-#endif
-
-#ifndef CSTR_REALLOC
-	#define CSTR_REALLOC realloc
-#endif
-
-#ifndef CST_FREE
-	#define CSTR_FREE free
-#endif
-
-#ifdef __LP64__
-	#define HAVE_64_BITS
-#endif
 
 typedef char* cstr_t;
 typedef const char* cstr_const_t;
@@ -73,7 +55,7 @@ struct head0 {
 };
 #define T0_MAX	(uint8_t)(-1)
 #ifndef T0_BUFFER
-    #define T0_BUFFER 0x10
+    #define T0_BUFFER 0x40
 #endif
 
 struct head1 {
@@ -128,7 +110,12 @@ typedef struct head3 header_cnt;
 typedef struct head2 header_cnt;
 #endif
 
-typedef intmax_t cstr_wrapper;
+//typedef intmax_t cstr_wrapper;
+#ifdef HAVE_64_BITS
+typedef intmax_t cstr_wrapper;	// This is why 64-bit string is not desired.
+#else
+typedef int cstr_wrapper;
+#endif
 typedef int cstr_lower;
 
 struct alloc_man {
@@ -139,8 +126,19 @@ struct alloc_man {
 	cstr_lower		datoff;
 	enum cstr_tt type;
 };
+
+#ifndef __get_write_enum
+#define __get_write_enum
+enum write_mode {
+	WRITE_APPEND	= 0x01,
+	WRITE_OVERWRITE	= 0x02
+};
+#endif
+
+
 #endif /* __get_struct */
 #endif /* __need_struct */
+
 
 // Generate
 extern cstr_t ncstr_mt();
@@ -200,8 +198,8 @@ extern inline header_cnt __cstr_header(const cstr_const_t, enum cstr_tt);
 extern inline struct alloc_man __cstr_getman(size_t);
 extern inline struct alloc_man __cstr_getman_wp(const cstr_const_t, enum cstr_tt);
 extern inline struct alloc_man __cstr_getman_wh(header_cnt, enum cstr_tt);
-extern inline void* __cstr_set_header(void*, struct alloc_man, enum cstr_tt);
-extern inline void* __cstr_set_header_wh(void*, header_cnt, enum cstr_tt);
+extern inline void* __cstr_set_header(void*, struct alloc_man*, enum cstr_tt);
+extern inline void* __cstr_set_header_wh(void*, header_cnt*, enum cstr_tt);
 
 extern inline cstr_lower __cstr_toflag(enum cstr_tt);
 extern inline enum cstr_tt __cstr_from_flag(cstr_lower);
@@ -209,6 +207,10 @@ extern inline cstr_lower __cstr_nof_buffer(size_t, enum cstr_tt);
 extern inline cstr_lower __cstr_nof_buffer_alone(size_t);
 
 extern void __cstr_resize_from(cstr_t* p, const char* src, size_t cap, int create);
+
+#ifdef __get_write_enum
+//extern void* __cstr_write(cstr_t* p, const char* src, size_t cap, size_t pos, enum write_mode); // Waiting for implemetation
+#endif
 
 #endif /* __get_cstr_inner_func */
 #endif

@@ -34,7 +34,9 @@ OBJ_DIR	:=$(BUILD)/obj
 INC		:=-I ..
 # Soruce files directory
 SRC_DIR	:= ..
-SRCS	:=$(shell find $(SRC_DIR) -name '*.cpp' -or -name '*.c')
+SRCS	:=$(shell find $(SRC_DIR)  -name '*.c')
+CMP_SRC := ./compare.cpp
+CMP_OUT := ./compare
 
 # Object and external object file
 OBJ		:=$(SRCS:%=$(OBJ_DIR)/%.o)
@@ -42,7 +44,7 @@ EX 		:=
 
 #-----------Content----------------------
 
-all: build $(APP_DIR)/$(TARGET)			#all: target  './main'
+all: build $(APP_DIR)/$(TARGET) cmp_build
 
 #Build from Cpp source
 $(OBJ_DIR)/%.cpp.o: %.cpp
@@ -59,13 +61,16 @@ $(OBJ_DIR)/%.c.o: %.c
 $(APP_DIR)/$(TARGET): $(OBJ)
 		$(CC) $(CFLAGS) $(OFLAGS) $(APP_DIR)/$(TARGET) $^ $(LDFLAGS)
 
-.PHONY: all build debug execute clean release test
+.PHONY: all build cmp_build debug execute clean release test
 build:
 		@mkdir -p $(APP_DIR)
 		@mkdir -p $(OBJ_DIR)
 
-release	: CFLAGS+=-O2
-release	: CXXFLAGS+=-O2
+cmp_build:
+		$(CCX) $(CXXFLAGS) $(INC) $(CMP_SRC) $(OFLAGS) $(CMP_OUT)
+
+release	: CFLAGS+=-O2 -D __release
+release	: CXXFLAGS+=-O2 -D __release
 release	: all
 
 debug	: CFLAGS+=-g
