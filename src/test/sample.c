@@ -34,9 +34,6 @@ int main(int argc, const char* argv[])
 		"And desert you\n";
 	for (int i = RUN_LIMIT; i; i--)
 	{
-		cstr_t cstr_0 = ncstr_new(20);
-		cstr_free(cstr_0);
-
 		cstr_t cstr_1 = ncstr_from("Never gonna give you up\n");
 		puts("String 1\n"); cstr_puts(cstr_1, 0, fd);
 		cstr_t cstr_2 = ncstr_from("Never gonna make you cry\n");
