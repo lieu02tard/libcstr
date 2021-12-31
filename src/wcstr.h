@@ -57,7 +57,8 @@ struct head0 {
 };
 #define T0_MAX	(uint8_t)(-1)
 #ifndef T0_BUFFER
-    #define T0_BUFFER 0x10
+    #define T0_BUFFER 0x40
+	#define T0_MASK 6
 #endif
 
 struct head1 {
@@ -69,6 +70,7 @@ struct head1 {
 #define T1_MAX (uint16_t)(-1)
 #ifndef T1_BUFFER 
     #define T1_BUFFER 0x400
+	#define T1_MASK 10
 #endif
 
 struct head2 {
@@ -80,6 +82,7 @@ struct head2 {
 #define T2_MAX (uint32_t)(-1)
 #ifndef T2_BUFFER
     #define T2_BUFFER 0x1000
+	#define T2_MASK 12
 #endif
 
 #ifdef  HAVE_64_BITS
@@ -92,6 +95,7 @@ struct head3 {
 #define T3_MAX (uint64_t)(-1)
 #ifndef T3_BUFFER
 	#define T3_BUFFER 0x1000000
+	#define T3_MASK 24
 #endif
 
 #endif /* HAVE_64_BITS */

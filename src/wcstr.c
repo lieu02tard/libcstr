@@ -409,7 +409,21 @@ inline enum wcstr_tt __wcstr_from_flag(wcstr_lower flag)
 
 inline wcstr_lower __wcstr_nof_buffer(size_t nbytes, enum wcstr_tt type)
 {
-	return nbytes/__wcstr_datbuf(type) + 1;
+	switch (type)
+	{
+		case WCSTR_TYPE_0:
+			return (nbytes >> T0_MASK) + 1;
+		case WCSTR_TYPE_1:
+			return (nbytes >> T1_MASK) + 1;
+		case WCSTR_TYPE_2:
+			return (nbytes >> T2_MASK) + 1;
+#ifdef HAVE_64_BITS
+		case WCSTR_TYPE_3:
+			return (nbytes >> T3_MASK) + 1;
+#endif
+		default:
+			__cstr_debug(CSTR_DEBUG_INVALID_STRING_TYPE);
+	}
 }
 
 inline wcstr_lower __wcstr_nof_buffer_alone(size_t nbytes)
