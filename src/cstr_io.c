@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <string.h>
 
 __attribute__((always_inline))
 inline int cread(char* buf, char delim, int max, int fd)

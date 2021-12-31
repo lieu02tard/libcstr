@@ -112,11 +112,11 @@ typedef struct head2 header_cnt;
 
 //typedef intmax_t cstr_wrapper;
 #ifdef HAVE_64_BITS
-typedef intmax_t cstr_wrapper;	// This is why 64-bit string is not desired.
+typedef uintmax_t cstr_wrapper;	// This is why 64-bit string is not desired.
 #else
-typedef int cstr_wrapper;
+typedef unsigned int cstr_wrapper;
 #endif
-typedef int cstr_lower;
+typedef unsigned int cstr_lower;
 
 struct alloc_man {
 	cstr_wrapper	relsiz;

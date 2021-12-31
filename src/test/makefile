@@ -4,9 +4,9 @@ SHELL	:=/usr/bin/bash
 CC		:=gcc
 CCX		:=g++
 # C flags
-CFLAGS	:=-Wall
+CFLAGS	:=-Wall -Wextra -fstack-protector -pipe
 # CPP flags
-CXXFLAGS:=-Wall
+CXXFLAGS:=-Wall -Wextra -fstack-protector -pipe
 # Output flags
 OFLAGS	:=-o
 # Assemble flag (but not link)
@@ -35,6 +35,7 @@ INC		:=-I ..
 # Soruce files directory
 SRC_DIR	:= ..
 SRCS	:=$(shell find $(SRC_DIR)  -name '*.c')
+VALGRIND_LOG:=./valgrind_log
 CMP_SRC := ./compare.cpp
 CMP_OUT := ./compare
 
@@ -84,7 +85,7 @@ execute	:
 test	: debug
 test	: all
 test	: 
-		valgrind -s --track-origins=yes --leak-check=full --show-leak-kinds=all $(APP_DIR)/$(TARGET) | tee -a valgrind_log
+		valgrind -s --track-origins=yes --leak-check=full --show-leak-kinds=all $(APP_DIR)/$(TARGET) | tee $(VALGRIND_LOG)
 
 clean:
 		-@rm -rf $(BUILD)
