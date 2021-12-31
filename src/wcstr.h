@@ -186,12 +186,12 @@ extern inline wcstr_lower __wcstr_datbuf(enum wcstr_tt);
 extern inline wcstr_lower __wcstr_datbuf_wn(size_t);
 
 extern inline void* __wcstr_head(const wcstr_const_t p, enum wcstr_tt type);
-extern inline header_cnt __wcstr_header_from(void*, enum wcstr_tt);
-extern inline header_cnt __wcstr_header(const wcstr_const_t, enum wcstr_tt);
+extern inline void __wcstr_header_from(header_cnt*, void*, enum wcstr_tt);
+extern inline void __wcstr_header(header_cnt*, const wcstr_const_t, enum wcstr_tt);
 
-extern inline struct alloc_man __wcstr_getman(size_t);
-extern inline struct alloc_man __wcstr_getman_wp(const wcstr_const_t, enum wcstr_tt);
-extern inline struct alloc_man __wcstr_getman_wh(header_cnt, enum wcstr_tt);
+extern inline void __wcstr_getman(struct alloc_man*, size_t);
+extern inline void __wcstr_getman_wp(struct alloc_man*, const wcstr_const_t, enum wcstr_tt);
+extern inline void__wcstr_getman_wh(struct alloc_man*, header_cnt*, enum wcstr_tt);
 extern inline void* __wcstr_set_header(void*, struct alloc_man*, enum wcstr_tt);
 extern inline void* __wcstr_set_header_wh(void*, header_cnt*, enum wcstr_tt);
 

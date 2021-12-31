@@ -73,7 +73,8 @@ char* cstr_delim (cstr_t* p, size_t size, char delim, size_t* index, int fd, enu
 	cstr_wrapper pos = 0;
 	enum cstr_tt otype = __cstr_type(*p);
 	head = __cstr_head(*p, otype);
-	struct alloc_man man = __cstr_getman_wp(*p, otype);
+	struct alloc_man man;
+	__cstr_getman_wp(&man, *p, otype);
 
 	switch (mode)
 	{
@@ -81,7 +82,7 @@ char* cstr_delim (cstr_t* p, size_t size, char delim, size_t* index, int fd, enu
 			pos = __cstr_relsiz(*p, otype);
 			if (pos + n > man.nofblk - man.datoff)
 			{
-				man = __cstr_getman(pos + n);
+				__cstr_getman(&man, pos + n);
 				otype = man.type;
 				char* _alloc = (char*) realloc(head, man.nofblk * sizeof(char));
 				if (!_alloc)
@@ -106,7 +107,7 @@ char* cstr_delim (cstr_t* p, size_t size, char delim, size_t* index, int fd, enu
 			pos = 0;
 			if (n > man.nofblk - man.datoff)
 			{
-				man  = __cstr_getman(n);
+				__cstr_getman(&man, n);
 				otype = man.type;
 				char* _alloc = (char*) realloc(head, man.nofblk * sizeof(char));
 				if (!_alloc)
@@ -137,7 +138,7 @@ char* cstr_delim (cstr_t* p, size_t size, char delim, size_t* index, int fd, enu
 	{
 		if (pos + n > man.nofblk - man.datoff)
 		{
-			man = __cstr_getman(pos + n);
+			__cstr_getman(&man, pos + n);
 			otype = man.type;
 			char* _alloc = (char*) realloc(head, man.nofblk * sizeof(char));
 			if (!_alloc)
@@ -198,7 +199,8 @@ char* cstr_fgets(cstr_t* p, size_t size, size_t* index, int fd, enum write_mode 
 	cstr_wrapper pos = 0;
 	enum cstr_tt otype = __cstr_type(*p);
 	head = __cstr_head(*p, otype);
-	struct alloc_man man = __cstr_getman_wp(*p, otype);
+	struct alloc_man man;
+	__cstr_getman_wp(&man, *p, otype);
 
 	switch (mode)
 	{
@@ -206,7 +208,7 @@ char* cstr_fgets(cstr_t* p, size_t size, size_t* index, int fd, enum write_mode 
 			pos = __cstr_relsiz(*p, otype);
 			if (pos + n > man.nofblk - man.datoff)
 			{
-				man = __cstr_getman(pos + n);
+				__cstr_getman(&man, pos + n);
 				otype = man.type;
 				char* _alloc = (char*) realloc(head, man.nofblk * sizeof(char));
 				if (!_alloc)
@@ -231,7 +233,7 @@ char* cstr_fgets(cstr_t* p, size_t size, size_t* index, int fd, enum write_mode 
 			pos = 0;
 			if (n > man.nofblk - man.datoff)
 			{
-				man  = __cstr_getman(n);
+				__cstr_getman(&man, n);
 				otype = man.type;
 				char* _alloc = (char*) realloc(head, man.nofblk * sizeof(char));
 				if (!_alloc)
@@ -262,7 +264,7 @@ char* cstr_fgets(cstr_t* p, size_t size, size_t* index, int fd, enum write_mode 
 	{
 		if (pos + n >= man.nofblk - man.datoff)
 		{
-			man = __cstr_getman(pos + n);
+			__cstr_getman(&man, pos + n);
 			otype = man.type;
 			char* _alloc = (char*) realloc(head, man.nofblk * sizeof(char));
 			if (!_alloc)

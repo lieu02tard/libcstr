@@ -195,12 +195,12 @@ extern inline cstr_lower __cstr_datoff_wn(size_t);
 extern inline cstr_lower __cstr_datbuf(enum cstr_tt);
 extern inline cstr_lower __cstr_datbuf_wn(size_t);
 
-extern inline header_cnt __cstr_header_from(void*, enum cstr_tt);
-extern inline header_cnt __cstr_header(const cstr_const_t, enum cstr_tt);
+extern inline void __cstr_header_from(header_cnt*, void*, enum cstr_tt);
+extern inline void __cstr_header(header_cnt*, const cstr_const_t, enum cstr_tt);
 
-extern inline struct alloc_man __cstr_getman(size_t);
-extern inline struct alloc_man __cstr_getman_wp(const cstr_const_t, enum cstr_tt);
-extern inline struct alloc_man __cstr_getman_wh(header_cnt, enum cstr_tt);
+extern inline void __cstr_getman(struct alloc_man*, size_t);
+extern inline void __cstr_getman_wp(struct alloc_man*, const cstr_const_t, enum cstr_tt);
+extern inline void __cstr_getman_wh(struct alloc_man*, header_cnt*, enum cstr_tt);
 extern inline void* __cstr_set_header(void*, struct alloc_man*, enum cstr_tt);
 extern inline void* __cstr_set_header_wh(void*, header_cnt*, enum cstr_tt);
 
