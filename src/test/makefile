@@ -62,7 +62,12 @@ $(OBJ_DIR)/%.c.o: %.c
 $(APP_DIR)/$(TARGET): $(OBJ)
 		$(CC) $(CFLAGS) $(OFLAGS) $(APP_DIR)/$(TARGET) $^ $(LDFLAGS)
 
-.PHONY: all build cmp_build debug execute clean release test
+.PHONY: all build cmp_build debug execute clean release test all_cl
+
+all_cl:	CC:=clang
+all_cl:	CCX:=clang++-11
+all_cl:	all
+
 build:
 		@mkdir -p $(APP_DIR)
 		@mkdir -p $(OBJ_DIR)
