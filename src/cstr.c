@@ -44,6 +44,11 @@ inline enum cstr_tt __cstr_type(const cstr_const_t p)
 }
 
 /**
+ * macro equivalent of __cstr_type
+ */
+#define m_cstr_type(p) (*((uint8_t*)(p) - 1) & __CSTR_TYPE_MASK)
+
+/**
  * __cstr_head - return head position
  * @p:		string
  * @type:	type
@@ -55,6 +60,7 @@ inline void* __cstr_head(const cstr_const_t p , enum cstr_tt type)
 {
 	return (void*)p - __cstr_datoff(type);
 }
+#define m_cstr_head(p, type) ((void*)p - __cstr_datoff(type))
 
 /**
  * __cstr_type_wn - return type (with number)
@@ -76,6 +82,10 @@ inline enum cstr_tt __cstr_type_wn(size_t n)
 		(n <= T2_MAX) ? CSTR_TYPE_2 : CSTR_TYPE_INVALID;
 #endif
 }
+#define m_cstr_type_wn(n) ((n <= T0_MAX) ? CSTR_TYPE_0 :\
+				((n <= T1_MAX) ? CSTR_TYPE_1:\
+				((n <= T2_MAX) ? CSTR_TYPE_2:\
+				((n <= T3_MAX) ? CSTR_TYPE_3: CSTR_TYPE_INVALID))))
 
 /**
  * __cstr_nofbuf - get nofbuf metadata
@@ -104,6 +114,8 @@ inline cstr_lower __cstr_nofbuf(const cstr_const_t p, enum cstr_tt type)
 	}
 }
 
+#define m_cstr_nofbuf(p, type) (((struct head##type*)p - 1)->nofbuf)
+
 /**
  * __cstr_relsiz - get relsiz metadata
  * @p:		string
@@ -131,6 +143,7 @@ inline cstr_wrapper __cstr_relsiz(const cstr_const_t p, enum cstr_tt type)
 	}
 }
 
+#define m_cstr_relsiz(p, type) (((struct head##type*)p - 1)->nofbuf)
 /**
  * __cstr_flag - get flag
  * @p:		string
@@ -158,6 +171,8 @@ inline cstr_lower __cstr_flag(const cstr_const_t p, enum cstr_tt type)
 	}
 }
 
+#define m_cstr_flag(p, type) (((struct head##type*)p - 1)->flag)
+
 /**
  * __cstr_datoff - get data offset (of type)
  * @type:	type
@@ -184,17 +199,22 @@ inline cstr_lower __cstr_datoff(enum cstr_tt type)
 	}
 }
 
+#define m_cstr_datoff(type) sizeof(struct head##type)
+
 /**
  * __cstr_datoff_wn - get data offsert (of number)
  * @nbytes:		size
  *
  * return data offsert of the string that fit @nbytes of characters
  */
+
 __attribute__((always_inline))
 inline cstr_lower __cstr_datoff_wn(size_t nbytes)
 {
 	return __cstr_datoff(__cstr_type_wn(nbytes));
 }
+
+#define m_cstr_datoff_wn(nbytes) __cstr_datoff(__cstr_type_wn(nbytes));
 
 /**
  * __cstr_datbuf - get data buffer (of type)
@@ -222,6 +242,7 @@ inline cstr_lower __cstr_datbuf(enum cstr_tt type)
 	}
 }
 
+
 /**
  * __cstr_datbuf_wn - get data buffer (of number)
  * @nbytes:		size
@@ -233,6 +254,8 @@ inline cstr_lower __cstr_datbuf_wn(size_t nbytes)
 {
 	return __cstr_datbuf(__cstr_type_wn(nbytes));
 }
+
+#define m_cstr_datbuf_wn(nbytes) __cstr_datbuf(__cstr_type_wn(nbytes))
 
 /**
  * __cstr_set_nofbuf - set nofbuf metadata
@@ -268,6 +291,16 @@ inline void __cstr_set_nofbuf(const cstr_const_t p, cstr_lower val, enum cstr_tt
 }
 
 /**
+ * m_cstr_setmeta - Set metadata
+ * @p:		string
+ * @val:	value to set
+ * @type:	type of string
+ * @member:	type of value to set
+ */
+#define m_cstr_setmeta(p, val, type, member) do {((head##type*)p - 1)->member = val} while(0)
+
+#define m_cstr_set_nofbuf(p, val, type) m_cstr_setmeta(p, val, type, nofbuf)
+/**
  * __cstr_set_relsiz - set relsiz metadata
  * @p:			string
  * @val:		value to set
@@ -281,17 +314,17 @@ inline void __cstr_set_relsiz(const cstr_const_t p, cstr_wrapper val, enum cstr_
 	switch (type)
 	{
 		case CSTR_TYPE_0:
-			((HEADER_TYPE(0)*)p - 1)->nofbuf = val;
+			((HEADER_TYPE(0)*)p - 1)->relsiz = val;
 			return;
 		case CSTR_TYPE_1:
-			((HEADER_TYPE(1)*)p - 1)->nofbuf = val;
+			((HEADER_TYPE(1)*)p - 1)->relsiz = val;
 			return;
 		case CSTR_TYPE_2:
-			((HEADER_TYPE(2)*)p - 1)->nofbuf = val;
+			((HEADER_TYPE(2)*)p - 1)->relsiz = val;
 			return;
 #ifdef HAVE_64_BITS
 		case CSTR_TYPE_3:
-			((HEADER_TYPE(3)*)p - 1)->nofbuf = val;
+			((HEADER_TYPE(3)*)p - 1)->relsiz = val;
 			return;
 #endif
 		default:
@@ -299,6 +332,8 @@ inline void __cstr_set_relsiz(const cstr_const_t p, cstr_wrapper val, enum cstr_
 			return;
 	}
 }
+
+#define m_cstr_set_relsiz(p, val, type) m_cstr_setmeta(p, val, type, relsiz)
 
 /**
  * __cstr_header - get header of string
@@ -355,6 +390,11 @@ inline void __cstr_header_from(header_cnt* head, void* p, enum cstr_tt type)
 			__cstr_debug(CSTR_DEBUG_INVALID_STRING_TYPE);
 	}
 }
+#define m_cstr_header_from(head, p, type) do \
+{	head##type tmp = head##type(p);	\
+	head.nofbuf = tmp->nofbuf;	\
+	head.relsiz = tmp->relsiz;	\
+	head.flag = tmp->flag;		} while (0)
 
 /**
  * __cstr_getman - Get alloc_man from size
@@ -374,6 +414,15 @@ inline void __cstr_getman(struct alloc_man* man, size_t nbytes)
 	man->nofbuf	= __cstr_nof_buffer(nbytes, type);
 	man->nofblk	= __cstr_datbuf(type) * man->nofbuf + man->datoff;
 }
+
+#define m_cstr_getman(man, nbytes) do \
+{	enum cstr_tt __type = __cstr_type_wn(nbytes);	\
+	man.relsiz = nbytes;				\
+	man.flag = __cstr_toflag(__type);		\
+	man.datoff = __cstr_datoff(__type);		\
+	man.type = __type;				\
+	man.nofbuf = __cstr_nof_buffer(nbytes, type);	\
+	man.nofblk = __cstr_datbuf(type) * man->nofbuf + man->datoff;}
 
 /**
  * __cstr_getman - Get alloc_man from a stringa
@@ -429,6 +478,13 @@ inline void __cstr_getman_wp(struct alloc_man *man, const cstr_const_t p, enum c
 	man->nofblk	= man->nofbuf * __cstr_datbuf(type) + man->datoff;
 }
 
+#define m_cstr_getman_wp(man, p, type) do \
+{	head##type *tmp = (head##type*)p - 1;	\
+	man.relsiz = tmp->relsiz;		\
+	man.nofbuf = tmp->nofbuf;		\
+	man.flag = tmp->flag;			\
+	man.datoff = sizeof(head##type);} while (0)
+
 /**
  * __cstr_getman_wh - get alloc_man from a header
  * @head:		header
@@ -446,6 +502,14 @@ inline void __cstr_getman_wh(struct alloc_man *man, header_cnt *head, enum cstr_
 	man->datoff = __cstr_datoff(type);
 	man->nofblk = man->nofbuf * __cstr_datbuf(type) + man->datoff;
 }
+
+#define m_cstr_getman_wh(man, head, type) do \
+{	man.relsiz = head.relsiz;	\
+	man.nofbuf = head.nofbuf;	\
+	man.flag = head.flag;		\
+	man.type = type;		\
+	man.datoff = __cstr_datoff(type);\
+	man.nofblk = man.nofbuf * __cstr_datbuf(type) + man.datoff } while(0)
 
 /**
  * __cstr_set_header - set header
@@ -496,6 +560,13 @@ inline void* __cstr_set_header(void* p , struct alloc_man* man, enum cstr_tt typ
 	}
 }
 
+#define m_cstr_set_header(p, man, type)	\
+({ head##type tmp = (head##type*)p;	\
+	tmp->nofbuf = man.nofbuf;		\
+	tmp->relsiz = man.relsiz;		\
+	tmp->flag = *((uint8_t*)&man->flag + sizeof(man->flag) - 1); (void*)(tmp+1);})
+
+
 /**
  * __cstr_set_header_wh - set header from &header_cnt struct
  * @p:		header position
@@ -544,6 +615,7 @@ inline void* __cstr_set_header_wh(void* p, header_cnt* head, enum cstr_tt type)
 	}
 }
 
+
 /**
  * __cstr_toflag - convert type to flag
  * @type:		type
@@ -559,6 +631,11 @@ inline cstr_lower __cstr_toflag(enum cstr_tt type)
 	return tmp;
 }
 
+#define m_cstr_toflag(type) ({cstr_lower tmp = 0;\
+		uint8_t* ret = (uint8_t*)&tmp + sizeof(tmp) - 1;\
+		*ret = type;			\
+		tmp})
+
 /**
  * __cstr_from_flag - convert flag to type
  * @flag:		flag
@@ -571,6 +648,9 @@ inline enum cstr_tt __cstr_from_flag(cstr_lower flag)
 	uint8_t* ret = (uint8_t*)&flag + sizeof(flag) - 1;
 	return *ret;
 }
+#define m_cstr_from_flag(flag) ({\
+		uint8_t* ret = (uint8_t*)&flag + sizeof(flag) - 1;\
+		*ret;})
 
 /**
  * __cstr_nof_buffer - count the number of buffer to allocate
@@ -598,6 +678,7 @@ inline cstr_lower __cstr_nof_buffer(size_t nbytes, enum cstr_tt type)
 			__cstr_debug(CSTR_DEBUG_INVALID_STRING_TYPE);
 	}
 }
+#define m_cstr_nof_buffer(nbytes, type) ((nbytes >> T0_MASK) + 1)
 
 __attribute__((always_inline))
 inline cstr_lower __cstr_nof_buffer_alone(size_t nbytes)
