@@ -95,3 +95,4 @@ test	:
 clean:
 		-@rm -rf $(BUILD)
 		-@rm -rf $(APP_DIR)/$(TARGET)
+		-@rm -rf $(CMP_OUT)
