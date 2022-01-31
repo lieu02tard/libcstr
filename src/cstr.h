@@ -53,10 +53,10 @@ struct head0 {
 	uint8_t relsiz;
 	uint8_t flag;
 };
-#define T0_MAX	(uint8_t)(-1)
+#define T0_MAX	0xff
 #ifndef T0_BUFFER
-    #define T0_BUFFER 0x40	/* Aka 2^6 */
-	#define T0_MASK 6
+    #define T0_BUFFER 256	/* Aka 2**8 */
+	#define T0_MASK 8
 #endif
 
 struct head1 {
@@ -67,8 +67,8 @@ struct head1 {
 
 #define T1_MAX (uint16_t)(-1)
 #ifndef T1_BUFFER 
-    #define T1_BUFFER 0x400
-	#define T1_MASK 10
+    #define T1_BUFFER 4096
+	#define T1_MASK 12
 #endif
 
 struct head2 {
@@ -79,8 +79,8 @@ struct head2 {
 
 #define T2_MAX (uint32_t)(-1)
 #ifndef T2_BUFFER
-    #define T2_BUFFER 0x1000
-	#define T2_MASK 12
+    #define T2_BUFFER 65536
+	#define T2_MASK 16
 #endif
 
 #ifdef  HAVE_64_BITS
@@ -125,9 +125,9 @@ typedef unsigned int cstr_lower;
 struct alloc_man {
 	cstr_wrapper	relsiz;
 	cstr_wrapper	nofblk;
-	cstr_lower		nofbuf;
-	cstr_lower		flag;
-	cstr_lower		datoff;
+	cstr_lower	nofbuf;
+	cstr_lower	flag;
+	cstr_lower	datoff;
 	enum cstr_tt type;
 };
 

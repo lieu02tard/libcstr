@@ -197,6 +197,20 @@ inline cstr_lower __cstr_datoff(enum cstr_tt type)
 		default:
 			__cstr_debug(CSTR_DEBUG_INVALID_STRING_TYPE);
 	}
+
+}
+
+/* Alternative version of __cstr_datoff */
+__attribute__((always_inline))
+inline cstr_lower __cstr_datoff_alt(enum cstr_tt type)
+{
+#ifndef HAVE_64_BITS
+	static const size_t size[3] = {sizeof(HEADER_TYPE(0)), sizeof(HEADER_TYPE(1)), sizeof(HEADER_TYPE(2))};
+	return size[type - 1];
+#else /* 32 bits system */
+	static const size_t size[4] = {sizeof(HEADER_TYPE(0)), sizeof(HEADER_TYPE(1)), sizeof(HEADER_TYPE(2)), sizeof(HEADER_TYPE(3))};
+	return size[type - 1];
+#endif
 }
 
 #define m_cstr_datoff(type) sizeof(struct head##type)
