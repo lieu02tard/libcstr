@@ -39,7 +39,7 @@ WCHAR_TYPE* wcstrdcpy(wcstr_t* dest, const wcstr_const_t src)
 {
 	if (*dest == src)
 		return NULL;
-	__wcstr_resize_from(dest, src, __wcstr_relsiz(src, __wcstr_type(src)), 1);
+	__wcstr_resize_from(dest, src, __wcstr_relsiz(src), 1);
 	return *dest;
 }
 
@@ -91,7 +91,7 @@ WCHAR_TYPE* wcstrcat(wcstr_t *dest, const wcstr_const_t src)
 		return *dest;
 
 	//enum wcstr_tt otype = __cstr_type(*dest);
-	wcstr_wrapper dest_len = __wcstr_relsiz(*dest, __wcstr_type(*dest));
+	wcstr_wrapper dest_len = __wcstr_relsiz(*dest);
 	__wcstr_resize_from(dest, NULL, dest_len + src_len, 1);
 	memcpy(*dest + dest_len, src, src_len * sizeof(WCHAR_TYPE));
 	return *dest;
@@ -110,7 +110,7 @@ WCHAR_TYPE* wcstrgcat(wcstr_t *dest, const WCHAR_TYPE* src)
 		return *dest;
 
 //	enum wcstr_tt otype = __cstr_type(*dest);
-	wcstr_wrapper dest_len = __wcstr_relsiz(*dest, __wcstr_type(*dest));
+	wcstr_wrapper dest_len = __wcstr_relsiz(*dest);
 	__wcstr_resize_from(dest, NULL, dest_len + src_len, 1);
 	memcpy(*dest + dest_len, src, src_len * sizeof(WCHAR_TYPE));
 	(*dest)[dest_len + src_len - 1] = '\0';
@@ -129,7 +129,7 @@ WCHAR_TYPE* wcstrncat(wcstr_t *dest, const wcstr_const_t src, size_t nbytes)
 		return *dest;
 	}
 
-	wcstr_wrapper dest_len = __wcstr_relsiz(*dest, __wcstr_type(*dest));
+	wcstr_wrapper dest_len = __wcstr_relsiz(*dest);
 	__wcstr_resize_from(dest, NULL, dest_len + isrc_len, 1);
 	memcpy(*dest + dest_len , src, isrc_len);
 	(*dest)[dest_len + isrc_len - 1] = '\0';
@@ -148,7 +148,7 @@ WCHAR_TYPE* wcstrngcat(wcstr_t *dest, const WCHAR_TYPE* src, size_t nbytes)
 		return *dest;
 	}
 
-	wcstr_wrapper dest_len = __wcstr_relsiz(*dest, __wcstr_type(*dest));
+	wcstr_wrapper dest_len = __wcstr_relsiz(*dest);
 	__wcstr_resize_from(dest, NULL, dest_len + isrc_len, 1);
 	memcpy(*dest + dest_len, src, isrc_len * sizeof(WCHAR_TYPE));
 	(*dest)[dest_len + isrc_len - 1] = '\0';

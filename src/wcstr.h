@@ -51,47 +51,29 @@ extern "C" {
 #ifndef __get_struct
 #define __get_struct
 struct head0 {
-	uint8_t nofbuf;
-	uint8_t relsiz;
-	uint8_t flag;
-};
-#define T0_MAX	(uint8_t)(-1)
-#ifndef T0_BUFFER
-    #define T0_BUFFER 0x40
-	#define T0_MASK 6
-#endif
-
-struct head1 {
-	uint16_t nofbuf;
-	uint16_t relsiz;
-	uint16_t flag;
-};
-
-#define T1_MAX (uint16_t)(-1)
-#ifndef T1_BUFFER 
-    #define T1_BUFFER 0x400
-	#define T1_MASK 10
-#endif
-
-struct head2 {
 	uint32_t nofbuf;
 	uint32_t relsiz;
 	uint32_t flag;
 };
+#define T0_MAX	(uint8_t)(-1)
+#ifndef T0_BUFFER
+	#define T0_BUFFER 0x256
+	#define T0_MASK 8
+#endif
+
+#define T1_MAX (uint16_t)(-1)
+#ifndef T1_BUFFER 
+	#define T1_BUFFER 4096
+	#define T1_MASK 12
+#endif
 
 #define T2_MAX (uint32_t)(-1)
 #ifndef T2_BUFFER
-    #define T2_BUFFER 0x1000
-	#define T2_MASK 12
+	#define T2_BUFFER 65536
+	#define T2_MASK 16
 #endif
 
 #ifdef  HAVE_64_BITS
-struct head3 {
-	uint64_t nofbuf;
-	uint64_t relsiz;
-	uint64_t flag;
-};
-
 #define T3_MAX (uint64_t)(-1)
 #ifndef T3_BUFFER
 	#define T3_BUFFER 0x1000000
@@ -111,27 +93,27 @@ enum wcstr_tt {
 #endif
 };
 
-#ifdef HAVE_64_BITS
-typedef struct head3 header_cnt;
-#else
-typedef struct head2 header_cnt;
-#endif
+typedef struct head0 header_cnt;
 
-#ifdef HAVE_64_BITS
-typedef uintmax_t wcstr_wrapper;
-#else
 typedef unsigned int wcstr_wrapper;
-#endif
 typedef unsigned int wcstr_lower;
 
 struct alloc_man {
 	wcstr_wrapper	relsiz;
 	wcstr_wrapper	nofblk;
-	wcstr_lower		nofbuf;
-	wcstr_lower		flag;
-	wcstr_lower		datoff;
-	enum wcstr_tt type;
+	wcstr_lower	nofbuf;
+	wcstr_lower	datbuf;
+	enum cstr_tt 	type;
 };
+
+#ifndef __get_write_enum
+#define __get_write_enum
+enum write_mode {
+	WRITE_APPEND	= 0x01,
+	WRITE_OVERWRITE
+};
+#endif
+
 #endif /* __get_struct */
 #endif /* __need_struct */
 // Generate
@@ -169,31 +151,28 @@ extern inline void wcstr_reeval(const wcstr_const_t);
 #define __CSTR_TYPE_MASK 0x03
 
 extern inline enum wcstr_tt __wcstr_type(const wcstr_const_t);
-extern inline void* __cstr_head(const wcstr_const_t, enum wcstr_tt);
+extern inline void* __wcstr_head(const wcstr_const_t);
 extern inline enum wcstr_tt __wcstr_type_wn(size_t);
 
-extern inline wcstr_lower __wcstr_nofbuf(const wcstr_const_t, enum wcstr_tt);
-extern inline wcstr_wrapper __wcstr_relsiz(const wcstr_const_t, enum wcstr_tt);
-extern inline wcstr_lower __wcstr_flag(const wcstr_const_t, enum wcstr_tt);
-extern inline void __wcstr_set_nofbuf(const wcstr_const_t, wcstr_lower, enum wcstr_tt);
-extern inline void __wcstr_set_relsiz(const wcstr_const_t, wcstr_wrapper, enum wcstr_tt);
-extern inline void __wcstr_set_flag(const wcstr_const_t, wcstr_lower, enum wcstr_tt);
-
-extern inline wcstr_lower __wcstr_datoff(enum wcstr_tt);
-extern inline wcstr_lower __wcstr_datoff_wn(size_t);
+extern inline wcstr_lower __wcstr_nofbuf(const wcstr_const_t);
+extern inline wcstr_wrapper __wcstr_relsiz(const wcstr_const_t);
+extern inline wcstr_lower __wcstr_flag(const wcstr_const_t);
+extern inline void __wcstr_set_nofbuf(const wcstr_const_t, wcstr_lower);
+extern inline void __wcstr_set_relsiz(const wcstr_const_t, wcstr_wrapper);
+extern inline void __wcstr_set_flag(const wcstr_const_t, wcstr_lower);
 
 extern inline wcstr_lower __wcstr_datbuf(enum wcstr_tt);
 extern inline wcstr_lower __wcstr_datbuf_wn(size_t);
 
-extern inline void* __wcstr_head(const wcstr_const_t p, enum wcstr_tt type);
-extern inline void __wcstr_header_from(header_cnt*, void*, enum wcstr_tt);
-extern inline void __wcstr_header(header_cnt*, const wcstr_const_t, enum wcstr_tt);
+extern inline void __wcstr_header(header_cnt*, const wcstr_const_t);
+
+extern inline size_t __wcstr_mask(enum wcstr_tt);
 
 extern inline void __wcstr_getman(struct alloc_man*, size_t);
-extern inline void __wcstr_getman_wp(struct alloc_man*, const wcstr_const_t, enum wcstr_tt);
-extern inline void__wcstr_getman_wh(struct alloc_man*, header_cnt*, enum wcstr_tt);
-extern inline void* __wcstr_set_header(void*, struct alloc_man*, enum wcstr_tt);
-extern inline void* __wcstr_set_header_wh(void*, header_cnt*, enum wcstr_tt);
+extern inline void __wcstr_getman_wp(struct alloc_man*, const wcstr_const_t);
+extern inline void__wcstr_getman_wh(struct alloc_man*, header_cnt*);
+extern inline void* __wcstr_set_header(void*, struct alloc_man*);
+extern inline void* __wcstr_set_header_wh(void*, header_cnt*);
 
 extern inline wcstr_lower __wcstr_toflag(enum wcstr_tt);
 extern inline enum wcstr_tt __wcstr_from_flag(wcstr_lower);

@@ -103,14 +103,14 @@ struct alloc_man {
 	cstr_wrapper	nofblk;
 	cstr_lower	nofbuf;
 	cstr_lower	datbuf;
-	enum 		cstr_tt type;
+	enum cstr_tt	type;
 };
 
 #ifndef __get_write_enum
 #define __get_write_enum
 enum write_mode {
 	WRITE_APPEND	= 0x01,
-	WRITE_OVERWRITE	= 0x02
+	WRITE_OVERWRITE
 };
 #endif
 
@@ -170,7 +170,6 @@ extern inline cstr_lower __cstr_datoff_wn(size_t);
 extern inline cstr_lower __cstr_datbuf(enum cstr_tt);
 extern inline cstr_lower __cstr_datbuf_wn(size_t);
 
-extern inline void __cstr_header_from(header_cnt*, const cstr_const_t);
 extern inline void __cstr_header(header_cnt*, const cstr_const_t);
 
 extern inline size_t __cstr_mask(enum cstr_tt);

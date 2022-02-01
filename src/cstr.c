@@ -48,7 +48,7 @@ inline enum cstr_tt __cstr_type(const cstr_const_t p)
  */
 #define m_cstr_type(p) ({ \
 		struct head0 *__p = (struct head0*)p; \
-		--pc; pc->flag & __CSTR_TYPE_MASK;})
+		--__p; __p->flag & __CSTR_TYPE_MASK;})
 
 /**
  * __cstr_head - return head position
@@ -102,7 +102,7 @@ inline cstr_lower __cstr_nofbuf(const cstr_const_t p)
 
 #define m_cstr_getmeta(p, member) ({ \
 		struct head0 *pc = (struct head0*)p; \
-		--pc; return pc->member	})
+		--pc; pc->member	})
 
 #define m_cstr_nofbuf(p) m_cstr_getmeta(p, nofbuf)
 
@@ -121,7 +121,7 @@ inline cstr_wrapper __cstr_relsiz(const cstr_const_t p)
 	return pc->relsiz;
 }
 
-#define m_cstr_relsiz(p, type) m_cstr_getmeta(p, relsiz)
+#define m_cstr_relsiz(p) m_cstr_getmeta(p, relsiz)
 
 /**
  * __cstr_flag - get flag
@@ -203,11 +203,11 @@ inline cstr_lower __cstr_datbuf_wn(size_t nbytes)
 	return (nbytes <= T0_MAX) ? T0_BUFFER :
 		(nbytes <= T1_MAX) ? T1_BUFFER :
 		(nbytes <= T2_MAX) ? T2_BUFFER :
-		(nbytes <= T3_MAX) ? T3_BUFFER : CSTR_TYPE_INVALID;
+		(nbytes <= T3_MAX) ? T3_BUFFER : 0;
 #else
 	return (nbytes <= T0_MAX) ? T0_BUFFER :
 		(nbytes <= T1_MAX) ? T1_BUFFER :
-		(nbytes <= T2_MAX) ? T2_BUFFER : CSTR_TYPE_INVALID;
+		(nbytes <= T2_MAX) ? T2_BUFFER : 0;
 #endif
 }
 
@@ -265,14 +265,7 @@ inline void __cstr_header(header_cnt* head, const cstr_const_t p)
 	*head = *pc;
 }
 
-/**
- * m_cstr_header_from - get header of string
- * @head:	header (NOT pointer)
- * @p:		string
- *
- * get &header_cnt header of a string
- */
-#define m_cstr_header_from(head, p) do \
+#define m_cstr_header(head, p) do \
 {	struct head0 *pc = (struct head0*)p;	\
 	--p; head = *pc; } while(0)
 
@@ -323,7 +316,7 @@ inline void __cstr_getman(struct alloc_man* man, size_t nbytes)
 	man.relsiz = nbytes;	\
 	man.type = type;	\
 	man.nofbuf = __cstr_nof_buffer(nbytes, type);	\
-	man.nofblk = man.nofbuf << __cstr_mask(type);}
+	man.nofblk = man.nofbuf << __cstr_mask(type);} while(0)
 
 /**
  * __cstr_getman_wp - Get alloc_man from a string
@@ -346,12 +339,12 @@ inline void __cstr_getman_wp(struct alloc_man *man, const cstr_const_t p)
 }
 
 #define m_cstr_getman_wp(man, p) do \
-{	head##type *tmp = (struct head0*)p;	\
-	--tmp;					\
-	man.relsiz = tmp->relsiz;		\
-	man.nofbuf = tmp->nofbuf;		\
-	man.type = __cstr_from_flag(pc->flag);	\
-	man.nofblk = man.noblk << __cstr_mask(man->type); } while(0)
+{	struct head0 *__tmp = (struct head0*)p;	\
+	--__tmp;	\
+	man.relsiz = __tmp->relsiz;	\
+	man.nofbuf = __tmp->nofbuf;	\
+	man.type = __wcstr_from_flag(__tmp->flag);	\
+	man.nofblk = man.nofbuf << __wcstr_mask(man.type); } while(0)
 
 /**
  * __cstr_getman_wh - get alloc_man from a header
@@ -370,10 +363,10 @@ inline void __cstr_getman_wh(struct alloc_man *man, header_cnt *head)
 	man->nofblk	= man->nofbuf << __cstr_mask(man->type);
 }
 
-#define m_cstr_getman_wh(man, head, type) do \
+#define m_cstr_getman_wh(man, head) do \
 {	man.relsiz = head.relsiz;	\
 	man.nofbuf = head.nofbuf;	\
-	man.type = __cstr_from_flag(head->flag)	\
+	man.type = __cstr_from_flag(head.flag)	\
 	man.nofblk = man.nofbuf << __cstr_mask(man->type); } while(0)
 
 /**
@@ -397,7 +390,7 @@ inline void* __cstr_set_header(void* p , struct alloc_man* man)
 	return pc;
 }
 
-#define m_cstr_set_header(p, man, type)	\
+#define m_cstr_set_header(p, man)	\
 ({ struct head0 *tmp = (struct head0*)p;	\
 	tmp->nofbuf = man.nofbuf;		\
 	tmp->relsiz = man.relsiz;		\
@@ -409,7 +402,6 @@ inline void* __cstr_set_header(void* p , struct alloc_man* man)
  * __cstr_set_header_wh - set header from &header_cnt struct
  * @p:		header position
  * @head:	header struct
- * @type:	header type
  *
  * set header at position @p to @head's content
  */
@@ -418,8 +410,7 @@ inline void* __cstr_set_header_wh(void* p, header_cnt* head)
 {
 	struct head0 *pc = (struct head0*)p;
 	*pc = *head;
-	++pc;
-	return pc;
+	return ++pc;
 }
 
 
