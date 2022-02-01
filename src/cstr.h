@@ -49,46 +49,31 @@ extern "C" {
 #ifndef __get_struct
 #define __get_struct
 struct head0 {
-	uint8_t nofbuf;
-	uint8_t relsiz;
-	uint8_t flag;
+	uint32_t nofbuf;
+	uint32_t relsiz;
+	uint32_t flag;	
 };
+
+/* Type is now use for buffering purposes */
 #define T0_MAX	0xff
 #ifndef T0_BUFFER
-    #define T0_BUFFER 256	/* Aka 2**8 */
+	#define T0_BUFFER 256	/* Aka 2**8 */
 	#define T0_MASK 8
 #endif
 
-struct head1 {
-	uint16_t nofbuf;
-	uint16_t relsiz;
-	uint16_t flag;
-};
-
 #define T1_MAX (uint16_t)(-1)
 #ifndef T1_BUFFER 
-    #define T1_BUFFER 4096
+	#define T1_BUFFER 4096
 	#define T1_MASK 12
 #endif
 
-struct head2 {
-	uint32_t nofbuf;
-	uint32_t relsiz;
-	uint32_t flag;
-};
-
 #define T2_MAX (uint32_t)(-1)
 #ifndef T2_BUFFER
-    #define T2_BUFFER 65536
+	#define T2_BUFFER 65536
 	#define T2_MASK 16
 #endif
 
 #ifdef  HAVE_64_BITS
-struct head3 {
-	uint64_t nofbuf;
-	uint64_t relsiz;
-	uint64_t flag;
-};
 
 #define T3_MAX (uint64_t)(-1)
 #ifndef T3_BUFFER
@@ -108,27 +93,17 @@ enum cstr_tt {
 #endif
 };
 
-#ifdef HAVE_64_BITS
-typedef struct head3 header_cnt;
-#else
-typedef struct head2 header_cnt;
-#endif
+typedef struct head0 header_cnt;
 
-//typedef intmax_t cstr_wrapper;
-#ifdef HAVE_64_BITS
-typedef uintmax_t cstr_wrapper;	// This is why 64-bit string is not desired.
-#else
 typedef unsigned int cstr_wrapper;
-#endif
 typedef unsigned int cstr_lower;
 
 struct alloc_man {
 	cstr_wrapper	relsiz;
 	cstr_wrapper	nofblk;
 	cstr_lower	nofbuf;
-	cstr_lower	flag;
-	cstr_lower	datoff;
-	enum cstr_tt type;
+	cstr_lower	datbuf;
+	enum 		cstr_tt type;
 };
 
 #ifndef __get_write_enum
@@ -179,15 +154,15 @@ extern inline void cstr_reeval(const cstr_const_t);
 #define __CSTR_TYPE_MASK 0x03
 
 extern inline enum cstr_tt __cstr_type(const cstr_const_t);
-extern inline void* __cstr_head(const cstr_const_t, enum cstr_tt);
+extern inline void* __cstr_head(const cstr_const_t);
 extern inline enum cstr_tt __cstr_type_wn(size_t);
 
-extern inline cstr_lower  __cstr_nofbuf(const cstr_const_t, enum cstr_tt);
-extern inline cstr_wrapper __cstr_relsiz(const cstr_const_t, enum cstr_tt);
-extern inline cstr_lower __cstr_flag(const cstr_const_t, enum cstr_tt);
-extern inline void __cstr_set_nofbuf(const cstr_const_t, cstr_lower, enum cstr_tt);
-extern inline void __cstr_set_relsiz(const cstr_const_t, cstr_wrapper, enum cstr_tt);
-extern inline void __cstr_set_flag(const cstr_const_t, cstr_lower, enum cstr_tt);
+extern inline cstr_lower  __cstr_nofbuf(const cstr_const_t);
+extern inline cstr_wrapper __cstr_relsiz(const cstr_const_t);
+extern inline cstr_lower __cstr_flag(const cstr_const_t);
+extern inline void __cstr_set_nofbuf(const cstr_const_t, cstr_lower);
+extern inline void __cstr_set_relsiz(const cstr_const_t, cstr_wrapper);
+extern inline void __cstr_set_flag(const cstr_const_t, enum cstr_tt);
 
 extern inline cstr_lower __cstr_datoff(enum cstr_tt);
 extern inline cstr_lower __cstr_datoff_wn(size_t);
@@ -195,19 +170,22 @@ extern inline cstr_lower __cstr_datoff_wn(size_t);
 extern inline cstr_lower __cstr_datbuf(enum cstr_tt);
 extern inline cstr_lower __cstr_datbuf_wn(size_t);
 
-extern inline void __cstr_header_from(header_cnt*, void*, enum cstr_tt);
-extern inline void __cstr_header(header_cnt*, const cstr_const_t, enum cstr_tt);
+extern inline void __cstr_header_from(header_cnt*, const cstr_const_t);
+extern inline void __cstr_header(header_cnt*, const cstr_const_t);
+
+extern inline size_t __cstr_mask(enum cstr_tt);
 
 extern inline void __cstr_getman(struct alloc_man*, size_t);
-extern inline void __cstr_getman_wp(struct alloc_man*, const cstr_const_t, enum cstr_tt);
-extern inline void __cstr_getman_wh(struct alloc_man*, header_cnt*, enum cstr_tt);
-extern inline void* __cstr_set_header(void*, struct alloc_man*, enum cstr_tt);
-extern inline void* __cstr_set_header_wh(void*, header_cnt*, enum cstr_tt);
+extern inline void __cstr_getman_wp(struct alloc_man*, const cstr_const_t);
+extern inline void __cstr_getman_wh(struct alloc_man*, header_cnt*);
+extern inline void* __cstr_set_header(void*, struct alloc_man*);
+extern inline void* __cstr_set_header_wh(void*, header_cnt*);
 
 extern inline cstr_lower __cstr_toflag(enum cstr_tt);
 extern inline enum cstr_tt __cstr_from_flag(cstr_lower);
 extern inline cstr_lower __cstr_nof_buffer(size_t, enum cstr_tt);
 extern inline cstr_lower __cstr_nof_buffer_alone(size_t);
+
 
 extern void __cstr_resize_from(cstr_t* p, const char* src, size_t cap, int create);
 

@@ -72,24 +72,24 @@ char* cstr_delim (cstr_t* p, size_t size, char delim, size_t* index, int fd, enu
 
 	cstr_wrapper pos = 0;
 	enum cstr_tt otype = __cstr_type(*p);
-	head = __cstr_head(*p, otype);
+	head = __cstr_head(*p);
 	struct alloc_man man;
-	__cstr_getman_wp(&man, *p, otype);
+	__cstr_getman_wp(&man, *p);
 
 	switch (mode)
 	{
 		case WRITE_APPEND:
-			pos = __cstr_relsiz(*p, otype);
-			if (pos + n > man.nofblk - man.datoff)
+			pos = __cstr_relsiz(*p);
+			if (pos + n > man.nofblk - sizeof(struct head0))
 			{
 				__cstr_getman(&man, pos + n);
 				otype = man.type;
-				char* _alloc = (char*) realloc(head, man.nofblk * sizeof(char));
+				char* _alloc = (char*) CSTR_REALLOC(head, man.nofblk * sizeof(char));
 				if (!_alloc)
 					__cstr_debug(CSTR_DEBUG_ALLOC_FAILURE);
 				head = _alloc;
-				memcpy(_alloc + man.datoff + pos, buf, n * sizeof(char));
-				*p = __cstr_set_header(_alloc, &man, otype);
+				memcpy(_alloc + sizeof(struct head0) + pos, buf, n * sizeof(char));
+				*p = __cstr_set_header(_alloc, &man);
 				c = *p + pos + n;
 				*c = '\0';
 				pos += n;
@@ -105,7 +105,7 @@ char* cstr_delim (cstr_t* p, size_t size, char delim, size_t* index, int fd, enu
 
 		case WRITE_OVERWRITE:
 			pos = 0;
-			if (n > man.nofblk - man.datoff)
+			if (n > man.nofblk - sizeof(struct head0))
 			{
 				__cstr_getman(&man, n);
 				otype = man.type;
@@ -113,8 +113,8 @@ char* cstr_delim (cstr_t* p, size_t size, char delim, size_t* index, int fd, enu
 				if (!_alloc)
 					__cstr_debug(CSTR_DEBUG_ALLOC_FAILURE);
 				head = _alloc;
-				memcpy(_alloc + man.datoff, buf, n *sizeof(char));
-				*p = __cstr_set_header(_alloc, &man, otype);
+				memcpy(_alloc + sizeof(struct head0), buf, n *sizeof(char));
+				*p = __cstr_set_header(_alloc, &man);
 				c = *p + n;
 				*c = '\0';
 				pos += n;
@@ -136,7 +136,7 @@ char* cstr_delim (cstr_t* p, size_t size, char delim, size_t* index, int fd, enu
 		*index += n;
 	while((n = cread(buf, delim, CSTR_IO_BUFFER, fd)) != 0)
 	{
-		if (pos + n > man.nofblk - man.datoff)
+		if (pos + n > man.nofblk - sizeof(struct head0))
 		{
 			__cstr_getman(&man, pos + n);
 			otype = man.type;
@@ -144,8 +144,8 @@ char* cstr_delim (cstr_t* p, size_t size, char delim, size_t* index, int fd, enu
 			if (!_alloc)
 				__cstr_debug(CSTR_DEBUG_ALLOC_FAILURE);
 			head = _alloc;
-			memcpy(_alloc + man.datoff + pos, buf, n * sizeof(char));
-			*p = __cstr_set_header(_alloc, &man, otype);
+			memcpy(_alloc + sizeof(struct head0) + pos, buf, n * sizeof(char));
+			*p = __cstr_set_header(_alloc, &man);
 			c = *p + pos + n;
 			*c = '\0';
 			pos += n;
@@ -198,24 +198,24 @@ char* cstr_fgets(cstr_t* p, size_t size, size_t* index, int fd, enum write_mode 
 
 	cstr_wrapper pos = 0;
 	enum cstr_tt otype = __cstr_type(*p);
-	head = __cstr_head(*p, otype);
+	head = __cstr_head(*p);
 	struct alloc_man man;
-	__cstr_getman_wp(&man, *p, otype);
+	__cstr_getman_wp(&man, *p);
 
 	switch (mode)
 	{
 		case WRITE_APPEND:
-			pos = __cstr_relsiz(*p, otype);
-			if (pos + n > man.nofblk - man.datoff)
+			pos = __cstr_relsiz(*p);
+			if (pos + n > man.nofblk - sizeof(struct head0))
 			{
 				__cstr_getman(&man, pos + n);
 				otype = man.type;
-				char* _alloc = (char*) realloc(head, man.nofblk * sizeof(char));
+				char* _alloc = (char*) CSTR_REALLOC(head, man.nofblk * sizeof(char));
 				if (!_alloc)
 					__cstr_debug(CSTR_DEBUG_ALLOC_FAILURE);
 				head = _alloc;
-				memcpy(_alloc + man.datoff + pos, buf, n * sizeof(char));
-				*p = __cstr_set_header(_alloc, &man, otype);
+				memcpy(_alloc + sizeof(struct head0) + pos, buf, n * sizeof(char));
+				*p = __cstr_set_header(_alloc, &man);
 				c = *p + pos + n;
 				*c = '\0';
 				pos += n;
@@ -231,16 +231,16 @@ char* cstr_fgets(cstr_t* p, size_t size, size_t* index, int fd, enum write_mode 
 
 		case WRITE_OVERWRITE:
 			pos = 0;
-			if (n > man.nofblk - man.datoff)
+			if (n > man.nofblk - sizeof(struct head0))
 			{
 				__cstr_getman(&man, n);
 				otype = man.type;
-				char* _alloc = (char*) realloc(head, man.nofblk * sizeof(char));
+				char* _alloc = (char*) CSTR_REALLOC(head, man.nofblk * sizeof(char));
 				if (!_alloc)
 					__cstr_debug(CSTR_DEBUG_ALLOC_FAILURE);
 				head = _alloc;
-				memcpy(_alloc + man.datoff, buf, n *sizeof(char));
-				*p = __cstr_set_header(_alloc, &man, otype);
+				memcpy(_alloc + sizeof(struct head0), buf, n *sizeof(char));
+				*p = __cstr_set_header(_alloc, &man);
 				c = *p + n;
 				*c = '\0';
 				pos += n;
@@ -262,16 +262,16 @@ char* cstr_fgets(cstr_t* p, size_t size, size_t* index, int fd, enum write_mode 
 		*index += n;
 	while((n = cread_no_delim(buf, CSTR_IO_BUFFER, fd)) != 0)
 	{
-		if (pos + n >= man.nofblk - man.datoff)
+		if (pos + n >= man.nofblk - sizeof(struct head0))
 		{
 			__cstr_getman(&man, pos + n);
 			otype = man.type;
-			char* _alloc = (char*) realloc(head, man.nofblk * sizeof(char));
+			char* _alloc = (char*) CSTR_REALLOC(head, man.nofblk * sizeof(char));
 			if (!_alloc)
 				__cstr_debug(CSTR_DEBUG_ALLOC_FAILURE);
 			head = _alloc;
-			memcpy(_alloc + man.datoff + pos, buf, n * sizeof(char));
-			*p = __cstr_set_header(_alloc, &man, otype);
+			memcpy(_alloc + sizeof(struct head0) + pos, buf, n * sizeof(char));
+			*p = __cstr_set_header(_alloc, &man);
 			c = *p + pos + n;
 			*c = '\0';
 			pos += n;
@@ -293,7 +293,7 @@ char* cstr_fgets(cstr_t* p, size_t size, size_t* index, int fd, enum write_mode 
 void cstr_puts(cstr_t p, size_t pos, int fd)
 {
 	enum cstr_tt otype = __cstr_type(p);
-	cstr_wrapper real_len = __cstr_relsiz(p, otype);
+	cstr_wrapper real_len = __cstr_relsiz(p);
 	cstr_wrapper to_write = real_len - pos;
 	if (to_write < 0)
 	{
@@ -310,7 +310,7 @@ static inline cstr_wrapper __min(cstr_wrapper a, cstr_wrapper b)
 void cstr_putsn(cstr_t p, size_t pos, size_t size, int fd)
 {
 	enum cstr_tt otype = __cstr_type(p);
-	cstr_wrapper real_len = __cstr_relsiz(p, otype);
+	cstr_wrapper real_len = __cstr_relsiz(p);
 	cstr_wrapper to_write = __min(size, real_len - pos);
 
 	if (to_write < 0)
@@ -324,7 +324,7 @@ void cstr_putsn(cstr_t p, size_t pos, size_t size, int fd)
 void cstr_dump(cstr_t p, int fd)
 {
 	enum cstr_tt otype = __cstr_type(p);
-	void* head = __cstr_head(p, otype);
-	cstr_wrapper to_write = __cstr_nofbuf(p, otype) * __cstr_datbuf(otype) + __cstr_datoff(otype);
+	void* head = __cstr_head(p);
+	cstr_wrapper to_write = (__cstr_nofbuf(p) << __cstr_mask(otype)) + sizeof(struct head0);
 	write(fd, head, to_write);
 }
