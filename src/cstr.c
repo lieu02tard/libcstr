@@ -26,6 +26,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
+#include <endian.h>
+
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+	#define __CSTR_LITTLE_ENDIAN
+#else
+	#define __CSTR_BIG_ENDIAN
+#endif
 
 #define HEADER_TYPE(n) struct head##n
 
@@ -543,21 +550,21 @@ inline void* __cstr_set_header(void* p , struct alloc_man* man, enum cstr_tt typ
 			HEADER_TYPE(0) *tmp0 = (HEADER_TYPE(0)*)p;
 			tmp0->nofbuf	= man->nofbuf;
 			tmp0->relsiz	= man->relsiz;
-			tmp0->flag		= *((uint8_t*)&man->flag + sizeof(man->flag) - 1);
+			tmp0->flag	= *((uint8_t*)&man->flag + sizeof(man->flag) - 1);
 			return (void*)(tmp0 + 1);
 		case CSTR_TYPE_1:
 			while(0){}
 			HEADER_TYPE(1) *tmp1 = (HEADER_TYPE(1)*)p;
 			tmp1->nofbuf	= man->nofbuf;
 			tmp1->relsiz	= man->relsiz;
-			tmp1->flag		= *((uint8_t*)&man->flag + sizeof(man->flag) - 1);
+			tmp1->flag	= *((uint8_t*)&man->flag + sizeof(man->flag) - 1);
 			return (void*)(tmp1 + 1);
 		case CSTR_TYPE_2:
 			while(0){}
 			HEADER_TYPE(2) *tmp2 = (HEADER_TYPE(2)*)p;
 			tmp2->nofbuf	= man->nofbuf;
 			tmp2->relsiz	= man->relsiz;
-			tmp2->flag		= *((uint8_t*)&man->flag + sizeof(man->flag) - 1);
+			tmp2->flag	= *((uint8_t*)&man->flag + sizeof(man->flag) - 1);
 			return (void*)(tmp2 + 1);
 #ifdef HAVE_64_BITS
 		case CSTR_TYPE_3:
@@ -565,7 +572,7 @@ inline void* __cstr_set_header(void* p , struct alloc_man* man, enum cstr_tt typ
 			HEADER_TYPE(3) *tmp3 = (HEADER_TYPE(3)*)p;
 			tmp3->nofbuf	= man->nofbuf;
 			tmp3->relsiz	= man->relsiz;
-			tmp3->flag		= *((uint8_t*)&man->flag + sizeof(man->flag) - 1);
+			tmp3->flag	= *((uint8_t*)&man->flag + sizeof(man->flag) - 1);
 			return (void*)(tmp3 + 1);
 #endif
 		default:
@@ -636,14 +643,45 @@ inline void* __cstr_set_header_wh(void* p, header_cnt* head, enum cstr_tt type)
  *
  * Convert @type to useable flag in a header
  */
-__attribute__((always_inline))
 inline cstr_lower __cstr_toflag(enum cstr_tt type)
 {
+	/*
 	cstr_lower tmp = 0;
 	uint8_t* ret = (uint8_t*)&tmp + sizeof(tmp) - 1;
 	*ret = type;
 	return tmp;
+	*/
+#if 0
+#ifdef __CSTR_LITTLE_ENDIAN
+	#ifdef HAVE_64_BITS
+		static const cstr_lower __return[4] = 
+		{ 0x01000000, 0x02000000, 0x03000000, 0x04000000 };
+	#else	/* 32 bits system */
+		static const cstr_lower __return[3] = 
+		{ 0x01000000, 0x02000000, 0x03000000 };
+	#endif
+#else /* big endianess */
+	#ifdef HAVE_64_BITS
+		static const cstr_lower __return[4] = 
+		{ 0x00000001, 0x00000002, 0x00000003, 0x00000004 };
+	#else	/* 32 bits system */
+		static const cstr_lower __return[3] = 
+		{ 0x00000001, 0x00000002, 0x00000003 };
+	#endif
+#endif
+		return __return[type];
+#endif
+	/* Another implementation */
+
+#ifdef __CSTR_LITTLE_ENDIAN
+	return type >> 24;
+#else
+	return type;
+#endif
+
 }
+
+	
 
 #define m_cstr_toflag(type) ({cstr_lower tmp = 0;\
 		uint8_t* ret = (uint8_t*)&tmp + sizeof(tmp) - 1;\
@@ -659,8 +697,15 @@ inline cstr_lower __cstr_toflag(enum cstr_tt type)
 __attribute__((always_inline))
 inline enum cstr_tt __cstr_from_flag(cstr_lower flag)
 {
+	/*
 	uint8_t* ret = (uint8_t*)&flag + sizeof(flag) - 1;
 	return *ret;
+	*/
+#ifdef __CSTR_LITTLE_ENDIAN
+	return flag << 24;
+#else
+	return flag;
+#endif
 }
 #define m_cstr_from_flag(flag) ({\
 		uint8_t* ret = (uint8_t*)&flag + sizeof(flag) - 1;\
@@ -797,6 +842,10 @@ cstr_t ncstrdup(cstr_t* p)
 	return _return;
 }
 
+void __cstr_make_room(cstr_t* p, const char* src, size_t capacity)
+{
+	
+}
 /**
  * __cstr_resize_from - Resize and move string
  * @p:		Pointer to &cstr_t string
