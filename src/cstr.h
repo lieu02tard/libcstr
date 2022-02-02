@@ -58,19 +58,28 @@ struct head0 {
 #define T0_MAX	0xff
 #ifndef T0_BUFFER
 	#define T0_BUFFER 256	/* Aka 2**8 */
-	#define T0_MASK 8
+	#define T0_BUFFER_MASK 8
+	#define T0_MAX_BUFFER 1 
 #endif
 
 #define T1_MAX (uint16_t)(-1)
 #ifndef T1_BUFFER 
-	#define T1_BUFFER 4096
-	#define T1_MASK 12
+	#define T1_BUFFER 4096		// Size of buffers
+	#define T1_BUFFER_MASK 12	// 2 ** 12 = 4096. Get it ?
+	#define T1_BUFFER_ALIGN 16	// Differences between preceed type and this type 's buffer size, aka 4096/256
+	#define T1_BUFFER_ALIGN_MASK 4	// 2 ** 4 = 16
+	#define T1_ATTEMPT_ALLOC 1	// Number of buffers to allocate if exceed the maximum size of the preceding type
+	#define T1_MAX_BUFFER 16	// Maximum number of buffers
 #endif
 
 #define T2_MAX (uint32_t)(-1)
 #ifndef T2_BUFFER
 	#define T2_BUFFER 65536
-	#define T2_MASK 16
+	#define T2_BUFFER_MASK 16
+	#define T2_BUFFER_ALIGN 16
+	#define T2_BUFFER_ALIGN_MASK 4
+	#define T2_ATTEMPT_ALLOC 2
+	#define T2_MAX_BUFFER 16
 #endif
 
 #ifdef  HAVE_64_BITS
@@ -78,7 +87,11 @@ struct head0 {
 #define T3_MAX (uint64_t)(-1)
 #ifndef T3_BUFFER
 	#define T3_BUFFER 0x1000000
-	#define T3_MASK 24
+	#define T3_BUFFER_MASK 24
+	#define T3_BUFFER_ALIGN 256
+	#define T3_BUFFER_ALIGN_MASK 8
+	#define T3_ATTEMP_ALLOC 513
+	#define T3_MAX_BUFFER 40
 #endif
 
 #endif 
@@ -92,6 +105,17 @@ enum cstr_tt {
 	, CSTR_TYPE_3 = 0x04
 #endif
 };
+
+#ifdef HAVE_64_BITS
+	#define CSTR_TYPE_MAX CSTR_TYPE_3
+	#define CSTR_MAXTYPE_MAX_BUFFER T3_MAX_BUFFER
+	#define CSTR_MAX_SIZE T3_MAX
+#else
+	#define CSTR_TYPE_MAX CSTR_TYPE_2
+	#define CSTR_MAXTYPE_MAX_BUFFER T2_MAX_BUFFER
+	#define CSTR_MAX_SIZE T2_MAX
+#endif
+
 
 typedef struct head0 header_cnt;
 
@@ -119,23 +143,39 @@ enum write_mode {
 #endif /* __need_struct */
 
 
-// Generate
+/* Generate function */
 extern cstr_t ncstr_mt();
-extern cstr_t ncstr_new (size_t);
-extern cstr_t ncstr_from (const char*);		// From literal
+extern cstr_t ncstr_new (size_t);			// Allocate by bytesj
+extern cstr_t ncstr_newblk(size_t);			// Allocate by blocks
+extern cstr_t ncstr_from (const char*);			// From literal
 extern cstr_t ncstrcpy (cstr_t);			// Deep copy
 extern cstr_t ncstrdup (cstr_t*);			// Transfer ownership
 
-// Adjust
+/* General size adjust */
 extern void cstr_resize(cstr_t*, size_t capacity);
 extern void	cstr_trim(cstr_t*);
 
-//Free
+/* Size growing */
+extern void cstr_blank(cstr_t*, size_t);		// Growing with blank spaces
+extern void cstr_grow0(cstr_t*, void*, size_t);		// Growing with copied data
+extern void cstr_grow_block(cstr_t*, size_t);		// Growing by blocks
+extern void cstr_exp_grow(cstr_t*);			// Growing exponentially
+
+/* Extra fast growing */
+extern inline size_t cstr_room(const cstr_const_t);	// Room available for writing
+extern inline size_t cstr_alloc_space(const cstr_const_t); // Space allocated
+extern inline void cstr_grow0_fast(cstr_t, void*, size_t);	// Growing with copied data
+extern inline void cstr_write0_fast(cstr_t, void*, size_t size, size_t pos); // Write fast at abitrary position
+extern inline void cstr_blank_fast(cstr_t, size_t);		// Growing with blank spaces
+extern inline void cstr_blankw_fast(cstr_t, size_t size, size_t pos);	// Fill blank spaces at abitrary position
+
+/* Writing */
+extern void* cstr_write(cstr_t*, void*, size_t size, size_t pos);
+extern void* cstr_append(cstr_t*, void*, size_t size);
+/* Free */
 extern inline void	cstr_free (cstr_t);
 
-//Examination
-//
-//Assess
+/* Examination */
 extern inline size_t cstr_buf (const cstr_const_t);		//Number of bufers allocated
 extern inline size_t cstr_len(const cstr_const_t);		//Length in use by string
 extern inline size_t cstr_rmn (const cstr_const_t);		//Remain size
@@ -177,6 +217,7 @@ extern inline size_t __cstr_mask(enum cstr_tt);
 extern inline void __cstr_getman(struct alloc_man*, size_t);
 extern inline void __cstr_getman_wp(struct alloc_man*, const cstr_const_t);
 extern inline void __cstr_getman_wh(struct alloc_man*, header_cnt*);
+extern inline void __cstr_getman_app_wh(struct alloc_man*, header_cnt*, size_t);
 extern inline void* __cstr_set_header(void*, struct alloc_man*);
 extern inline void* __cstr_set_header_wh(void*, header_cnt*);
 
@@ -188,10 +229,9 @@ extern inline cstr_lower __cstr_nof_buffer_alone(size_t);
 
 extern void __cstr_resize_from(cstr_t* p, const char* src, size_t cap, int create);
 
-#ifdef __get_write_enum
-//extern void* __cstr_write(cstr_t* p, const char* src, size_t cap, size_t pos, enum write_mode); // Waiting for implemetation
-#endif
-
+extern inline size_t __cstr_max_buffer(enum cstr_tt);
+extern inline size_t __cstr_buffer_align_mask(enum cstr_tt);
+extern inline void __cstr_alloc_max(cstr_t*);
 #endif /* __get_cstr_inner_func */
 #endif
 

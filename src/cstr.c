@@ -280,14 +280,14 @@ inline size_t __cstr_mask(enum cstr_tt type)
 	switch (type)
 	{
 		case CSTR_TYPE_0:
-			return T0_MASK;
+			return T0_BUFFER_MASK;
 		case CSTR_TYPE_1:
-			return T1_MASK;
+			return T1_BUFFER_MASK;
 		case CSTR_TYPE_2:
-			return T2_MASK;
+			return T2_BUFFER_MASK;
 #ifdef HAVE_64_BITS
 		case CSTR_TYPE_3:
-			return T3_MASK;
+			return T3_BUFFER_MASK;
 #endif
 		default:
 			__cstr_debug(CSTR_DEBUG_INVALID_STRING_TYPE);
@@ -454,14 +454,14 @@ inline cstr_lower __cstr_nof_buffer(size_t nbytes, enum cstr_tt type)
 	switch (type)
 	{
 		case CSTR_TYPE_0:
-			return (n >> T0_MASK) + 1;
+			return (n >> T0_BUFFER_MASK) + 1;
 		case CSTR_TYPE_1:
-			return (n >> T1_MASK) + 1;
+			return (n >> T1_BUFFER_MASK) + 1;
 		case CSTR_TYPE_2:
-			return (n >> T2_MASK) + 1;
+			return (n >> T2_BUFFER_MASK) + 1;
 #ifdef HAVE_64_BITS
 		case CSTR_TYPE_3:
-			return (n >> T3_MASK) + 1;
+			return (n >> T3_BUFFER_MASK) + 1;
 #endif
 		default:
 			__cstr_debug(CSTR_DEBUG_INVALID_STRING_TYPE);
@@ -667,24 +667,295 @@ void cstr_trim(cstr_t* p)
 	}
 }
 
-#ifdef __get_write_enum
 /**
- * __cstr_write - Write a string to abitrary position in a string
- * @p:		pointer to &cstr_t
- * @src:	source string
- * @cap:	length to write
- * @pos:	write position
- * @mode:	write mode
+ * cstr_room - Room free to write
+ * @p:	string
  *
- * Write @cap of @src string into @p. The position it write into is determine as follow:
- * 
- * Write @cap of @src's character into @p at position @pos.
- * If @mode contain WRITE_ERASE, erase all content from the end of newly-inserted string until the end of character array
- * If @mode contain WRITE_NULLP, erase all content except the newly-inserted string
- * 
- * If @pos is negative, count from the end so that -1 denote the last position.
- * If @mode contain WRITE_APPEND, the last position denote the terminate '\0' or that denote by relsiz metadata.
- * Otherwise, the last position denote the last position in entire string allocated. If @mode doesn't contain WRITE_APPEND, it is obvious that new memory will be allocated
+ * Return number of bytes still free to write
+ * This is to serve extra-fast writing
  */
+__attribute__((always_inline))
+inline size_t cstr_room(const cstr_const_t p)
+{
+	struct head0 head = *((struct head0*)p - 1);
+	return (head.nofbuf << __cstr_mask(__cstr_from_flag(head.flag))) - head.relsiz;	// Would it be better that we store remain bytes instead of occupied bytes
+}
 
+/**
+ * cstr_alloc_space - Space allocated
+ * @p:	string
+ *
+ * Return number of bytes allocated and safe to write
+ */
+__attribute__((always_inline))
+inline size_t cstr_alloc_space(const cstr_const_t p)
+{
+	struct head0 head = *((struct head0*)p - 1);
+	return head.nofbuf << __cstr_mask(__cstr_from_flag(head.flag));
+}
+
+/**
+ * cstr_write0_fast -  Write fast at abitrary position
+ * @p:		string
+ * @src:	data source
+ * @size:	size to write
+ * @pos:	write position
+ *
+ * Write at abitrary position without size checking overhead.
+ * The user held respobility for size checking
+ */
+__attribute__((always_inline))
+inline void cstr_write0_fast(cstr_t p , void* src, size_t size, size_t pos)
+{
+	memcpy(p + pos, src, size);
+	struct head0 *pc = (struct head0*)p;
+	--pc;
+	pc->relsiz += size;
+}
+
+/**
+ * cstr_grow0_fast - Growing fast
+ * @p:		string
+ * @src:	data source
+ * @size:	size to write
+ *
+ * Write at the end of string without size checking overhead
+ */
+inline void cstr_grow0_fast(cstr_t p, void* src, size_t size)
+{
+	struct head0 *pc = (struct head0*)p;
+	--pc;
+	memcpy(p + pc->relsiz, src, size);
+	pc->relsiz += size;
+}
+
+/**
+ * cstr_blankw_fast - Fill blank space fast
+ * @p:		string
+ * @size:	size to fill
+ * @pos:	position
+ *
+ * Fill @size bytes of blank space at @pos position
+ */
+inline void cstr_blankw_fast(cstr_t p, size_t size, size_t pos)
+{
+	memset(p + pos, '\0', size);
+	struct head0 *pc = (struct head0*)p;
+	--pc;
+	pc->relsiz += size;
+}
+
+/**
+ * cstr_blank_fast - Grow blank spaces fast
+ * @p:		string
+ * @size:	size to fill
+ * 
+ * Grow @size bytes of blank spaces at the end of string
+ */
+inline void cstr_blank_fast(cstr_t p, size_t size)
+{
+	struct head0 *pc = (struct head0*)p;
+	--pc;
+	memset(p + pc->relsiz, '\0', size);
+	pc->relsiz += size;
+}
+
+/**
+ * cstr_blank - Grow blank spaces
+ * @p:		pointer to &cstr_t string
+ * @size:	size to grow
+ *
+ * Grow @size bytes of blank spaces at the end of string
+ */
+void cstr_blank(cstr_t *p, size_t size)
+{
+	struct head0* pc = (struct head0*)p;
+	--pc;
+	struct alloc_man man;
+	__cstr_getman_app_wh(&man, pc, size);
+	if (((man.type == __cstr_from_flag(pc->flag)) && (man.nofbuf > pc->nofbuf)) || (man.type > __cstr_from_flag(pc->flag)))
+	{
+		uint8_t* _alloc = (uint8_t*) CSTR_REALLOC(pc, man.nofblk);
+		if (!_alloc)
+			__cstr_debug(CSTR_DEBUG_ALLOC_FAILURE);
+		_alloc[man.nofblk - 1] = '\0';
+		memset(_alloc + sizeof(struct head0) + pc->relsiz, '\0', size);
+		*p = (cstr_t) __cstr_set_header(_alloc, &man);
+		return;
+	}
+	else	/* No allocation needed */
+	{
+		memset(*p + pc->relsiz,  '\0', size);
+		return;
+	}
+}
+
+/**
+ * cstr_grow0 - Grow with copied data
+ * @p:		pointer to &cstr_t string
+ * @src:	data source
+ * @size:	data size
+ *
+ * Append @size bytes of @src
+ */
+void cstr_grow0(cstr_t *p, void* src, size_t size)
+{
+	struct head0 *pc = (struct head0*)p;
+	--pc;
+	struct alloc_man man;
+	__cstr_getman_app_wh(&man, pc, size);
+	if (((man.type == __cstr_from_flag(pc->flag)) && (man.nofbuf > pc->nofbuf)) || (man.type > __cstr_from_flag(pc->flag)))
+	{
+		uint8_t* _alloc = (uint8_t*) CSTR_REALLOC(pc, man.nofblk);
+		if (!_alloc)
+			__cstr_debug(CSTR_DEBUG_ALLOC_FAILURE);
+		_alloc[man.nofblk - 1] = '\0';
+		memcpy(_alloc + sizeof(struct head0) + pc->relsiz, src, size);
+		*p = (cstr_t) __cstr_set_header(_alloc, &man);
+		return;
+	}
+	else
+	{
+		memcpy(*p + pc->relsiz, src, size);
+		return;
+	}
+}
+
+/**
+ * cstr_grow_block - Growing by blocks
+ * @p:		pointer to &cstr_t string
+ * @nofblk:	number of blocks to grow
+ * 
+ * Grow @size blocks
+ * If @size exceed the blocks limit of a type, only add 1 blocks of the higher type. If @size exceed the block limit of the highest type, allocate the maximum number of memory availble
+ */
+void cstr_grow_block(cstr_t *p, size_t nofbuf)
+{
+	struct head0 *pc = (struct head0*)(*p);
+	--pc;
+	struct head0 tmp = *pc;
+	size_t man_nofbuf = nofbuf + tmp.nofbuf;
+	if (man_nofbuf > __cstr_max_buffer(__cstr_from_flag(pc->flag))) /* type changing */
+	{
+		if (__cstr_from_flag(pc->flag) != CSTR_TYPE_MAX) /* not largest type */
+		{
+			enum cstr_tt new_type = __cstr_from_flag(pc->flag) + 1;
+			size_t new_nofbuf = 1 + 
+				(man_nofbuf >> __cstr_buffer_align_mask(new_type));
+			size_t new_nofblk = new_nofbuf << __cstr_mask(new_type);
+			uint8_t* _alloc = (uint8_t*) CSTR_REALLOC(*p, new_nofblk * sizeof(char));
+			if (!_alloc)
+				__cstr_debug(CSTR_DEBUG_ALLOC_FAILURE);
+			pc = (struct head0*)_alloc;
+
+			pc->nofbuf = new_nofbuf;
+			pc->flag = __cstr_toflag(new_type);
+			
+			_alloc[new_nofblk - 1] = '\0';
+			
+			++pc;
+			*p = (cstr_t)pc;
+			return;
+		}
+		else /* Allocate largest space possible */
+			__cstr_alloc_max(p);
+	}
+	else /* type not changed */
+	{
+		size_t new_nofblk = man_nofbuf <<  __cstr_mask(
+				__cstr_from_flag(pc->flag));
+		uint8_t* _alloc = (uint8_t*) CSTR_REALLOC(*p, new_nofblk * sizeof(char));
+		if (!_alloc)
+			__cstr_debug(CSTR_DEBUG_ALLOC_FAILURE);
+		pc = (struct head0*)_alloc;
+		
+		pc->relsiz = tmp.relsiz;
+		pc->nofbuf = man_nofbuf;
+		pc->flag = tmp.flag;
+
+		_alloc[new_nofblk - 1] = '\0';
+
+		++pc;
+		*p = (cstr_t)pc;
+		return;
+	}
+}
+
+inline size_t __cstr_max_buffer(enum cstr_tt type)
+{
+	switch (type)
+	{
+		case CSTR_TYPE_0: return T0_MAX_BUFFER;
+		case CSTR_TYPE_1: return T1_MAX_BUFFER;
+		case CSTR_TYPE_2: return T2_MAX_BUFFER;
+#ifdef HAVE_64_BITS
+		case CSTR_TYPE_3: return T3_MAX_BUFFER;
 #endif
+		default: __cstr_debug(CSTR_DEBUG_INVALID_STRING_TYPE);
+	}
+}
+
+inline size_t __cstr_buffer_align_mask(enum cstr_tt type)
+{
+	switch (type)
+	{
+		case CSTR_TYPE_0: return 0;
+		case CSTR_TYPE_1: return T1_BUFFER_ALIGN_MASK;
+		case CSTR_TYPE_2: return T2_BUFFER_ALIGN_MASK;
+#ifdef HAVE_64_BITS
+		case CSTR_TYPE_3: return T3_BUFFER_ALIGN_MASK;
+#endif
+		default: __cstr_debug(CSTR_DEBUG_INVALID_STRING_TYPE);
+
+	}
+}
+
+inline void __cstr_alloc_max(cstr_t *p)
+{
+	struct head0 *pc = (struct head0*)(*p);
+	--pc;
+	
+	uint8_t *_alloc = (uint8_t*) CSTR_REALLOC(pc, CSTR_MAX_SIZE);
+	if (!_alloc)
+		__cstr_debug(CSTR_DEBUG_ALLOC_FAILURE);
+	pc = (struct head0*)_alloc;
+	pc->nofbuf = CSTR_MAXTYPE_MAX_BUFFER;
+	pc->flag = __cstr_toflag(CSTR_TYPE_MAX);
+
+	_alloc[CSTR_MAX_SIZE - 1] = '\0';
+	++pc;
+	*p = (cstr_t)pc;
+}
+
+extern void cstr_exp_grow(cstr_t *p)
+{
+	struct head0 *pc = (struct head0*)(*p);
+	--pc;
+
+	size_t man_nofbuf = pc->nofbuf * 2;
+	if (man_nofbuf > __cstr_max_buffer(__cstr_from_flag(pc->flag)))
+	{
+		if (__cstr_from_flag(pc->flag) != CSTR_TYPE_MAX) /* not largest type */
+		{
+			enum cstr_tt new_type = __cstr_from_flag(pc->flag) + 1;
+			size_t new_nofbuf = 1 + 
+				(man_nofbuf >> __cstr_buffer_align_mask(new_type));
+			size_t new_nofblk = new_nofbuf << __cstr_mask(new_type);
+			uint8_t* _alloc = (uint8_t*) CSTR_REALLOC(*p, new_nofblk * sizeof(char));
+			if (!_alloc)
+				__cstr_debug(CSTR_DEBUG_ALLOC_FAILURE);
+			pc = (struct head0*)_alloc;
+
+			pc->nofbuf = new_nofbuf;
+			pc->flag = __cstr_toflag(new_type);
+			
+			_alloc[new_nofblk - 1] = '\0';
+			
+			++pc;
+			*p = (cstr_t)pc;
+			return;
+		}
+		else /* Allocate largest space possible */
+			__cstr_alloc_max(p);
+	}
+}
