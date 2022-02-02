@@ -348,8 +348,8 @@ inline void __cstr_getman_wp(struct alloc_man *man, const cstr_const_t p)
 
 /**
  * __cstr_getman_wh - get alloc_man from a header
- * @head:		header
- * @type:		header type
+ * @man:	&alloc_man
+ * @head:	header
  *
  * get allocation manual for a header
  */
@@ -369,6 +369,18 @@ inline void __cstr_getman_wh(struct alloc_man *man, header_cnt *head)
 	man.type = __cstr_from_flag(head.flag)	\
 	man.nofblk = man.nofbuf << __cstr_mask(man->type); } while(0)
 
+/**
+ * __cstr_getman_app_wh - get alloc_man from a header appended a number of bytes
+ * @man:	&alloc_man
+ * @head:	header
+ * @size:	size to append
+ *
+ */
+__attribute__((always_inline))
+inline void __cstr_getman_app_wh(struct alloc_man *man, header_cnt *head, size_t app)
+{
+	__cstr_getman(man, head->relsiz + app);
+}
 /**
  * __cstr_set_header - set header
  * @p:			header position
@@ -587,6 +599,7 @@ void __cstr_make_room(cstr_t* p, const char* src, size_t capacity)
  */
 void __cstr_resize_from(cstr_t* p, const char* src, size_t capacity, int create)
 {
+	/* Create new string */
 	if (!p)
 		return;
 	if (*p == NULL && create)
@@ -605,6 +618,7 @@ void __cstr_resize_from(cstr_t* p, const char* src, size_t capacity, int create)
 	else if (*p == NULL)
 		return;
 
+	/* String already exists */
 	struct alloc_man man;
 	__cstr_getman_wp(&man, *p);
 
@@ -957,5 +971,39 @@ extern void cstr_exp_grow(cstr_t *p)
 		}
 		else /* Allocate largest space possible */
 			__cstr_alloc_max(p);
+	}
+}
+
+/**
+ * cstr_make_room - Allocate space
+ * @p:		string
+ * @size:	size to make
+ *
+ */
+inline void cstr_make_room(cstr_t *p, size_t size)
+{
+	struct alloc_man man_0;
+	__cstr_getman(&man_0, size);
+
+	struct head0 *pc = (struct head0*)p;
+	--pc;
+
+	struct alloc_man man_1;
+	__cstr_getman_wh(&man_1, pc);
+
+	if (man_1.nofblk > man_0.nofblk)
+	{
+		uint8_t *_alloc = (uint8_t*) CSTR_REALLOC(*p, man_1.nofblk);
+		if (!_alloc)
+			__cstr_debug(CSTR_DEBUG_ALLOC_FAILURE);
+		
+		pc = (struct head0*)_alloc;
+		pc->flag = __cstr_toflag(man_1.type);
+		pc->nofbuf = man_1.nofbuf;
+
+		_alloc[man_1.nofblk - 1] = '\0';
+
+		++pc;
+		*p = (cstr_t)pc;
 	}
 }

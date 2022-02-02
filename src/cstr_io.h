@@ -27,21 +27,23 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #ifndef CSTR_IO_BUFFER
 	#define CSTR_IO_BUFFER 4096
+	#define CSTR_IO_FIRST_TYPE CSTR_TYPE_1	// Minimum type to hold buffer
+	#define CSTR_IO_FIRST_NOFBUF 2		// Minumum number of nofbuf to hold a buffer
+	#define CSTR_IO_FIRST_HOLD 1		// Number of I/O buffer to fit string buffer
 #endif
 
-#ifndef __get_write_enum
-#define __get_write_enum
-enum write_mode {
-	WRITE_APPEND	= 0x01,
-	WRITE_OVERWRITE	= 0x02
-};
-#endif
 
-extern char* cstr_delim(cstr_t*,  size_t size, char delim, size_t *index, int fd, enum write_mode);
-extern char* cstr_getline(cstr_t* , size_t size, size_t *index, int fd, enum write_mode);
-extern char* cstr_fgets(cstr_t* , size_t size, size_t *index, int fd, enum write_mode);
+extern int cstr_read_pos(cstr_t*, size_t *index, size_t pos, int fd);
+extern int cstr_read_append(cstr_t*, size_t *index, int fd);
+extern int cstr_read(cstr_t*, size_t *index, int fd);
 
-extern void cstr_puts(cstr_t, size_t pos, int fd);
-extern void cstr_putsn(cstr_t, size_t pos, size_t size, int fd);
-extern void cstr_dump(cstr_t , int fd);
+extern int cstr_read_delim_pos(cstr_t*, char delim, size_t *index, size_t pos, int fd);
+extern int cstr_read_delim_append(cstr_t*, char delim, size_t *index, int fd);
+extern int cstr_read_delim(cstr_t*, char delim, size_t *index, int fd);
+
+extern int cstr_getline(cstr_t* ,size_t *index, size_t pos, int fd);
+
+extern void cstr_puts(const cstr_const_t, size_t pos, int fd);
+extern void cstr_putsn(const cstr_const_t, size_t pos, size_t size, int fd);
+extern void cstr_dump(const cstr_const_t, int fd);
 #endif

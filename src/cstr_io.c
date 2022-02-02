@@ -11,320 +11,211 @@
 #include <unistd.h>
 #include <string.h>
 
-__attribute__((always_inline))
-inline int cread(char* buf, char delim, int max, int fd)
-{
-	char c; int n;
-	int i = 0;
-	while((i < max) && ((n = read(fd, buf, max * sizeof(char)) != EOF)))
-	{
-#ifdef CSTR_DEBUG
-		puts(buf);
-#endif
-		c = *(buf++);
-		if (c == delim)
-		{
-			*buf = '\0';
-			break;
-		}
-	}
-	return i;
-}
-
-__attribute__((always_inline))
-inline int cread_no_delim(char* buf, int max, int fd)
-{
-	char c; int n;
-	int i = 0;
-	while((i < max) && (n = read(fd, buf, max * sizeof(char)), c != EOF))
-	{
-		//
-		++i;
-	}
-	return i;
-}
 /**
- * cstr_delim - Get from input stream until delimiters
- * @p:		&cstr_t string
- * @size:	maximum size to read
- * @delim:	delimiter character
- * @index:	write position
+ * cstr_read_pos - Read from file descriptor
+ * @p:		string
+ * @index:	size pointer
+ * @pos:	write position
  * @fd:		file descriptor
- * @mode:	write mode
  *
- * Write from @fd stream to @p until meet @delim or exceed @size
- * If @size is 0, maximum size would be abolished and cstr_delim() will read until @delim
- * When in CSTR_IO_APPEND mode, function will write from the first '\0' detected in the string and ignore @index.
-* When in CSTR_IO_WRITE mode, function will write from the position denoted by @index. If @index is NULL, write from the begin of the string.
- * After read complete, *index will be set to the position of the delimiter
- * Buffer are automatically allocate to hold the stream. cstr_delim() will not shrink the string
+ * Read data from file descriptor @fd and write to @p at position @pos
+ * After read completely, write number of bytes written to @index
+ * Return 0 if error were met or reach EOF
  */
-char* cstr_delim (cstr_t* p, size_t size, char delim, size_t* index, int fd, enum write_mode mode)
+int  cstr_read_pos(cstr_t *p, size_t *index, size_t pos, int fd)
 {
-	if (!p)
-		return NULL;
-
 	char buf[CSTR_IO_BUFFER];
-	char* c = NULL;
-	int n = 0;
-	char* head = NULL;
-	n = cread(buf, delim, CSTR_IO_BUFFER, fd);
+	ssize_t _read = 0;
+	size_t room = 0;
 
-	cstr_wrapper pos = 0;
-	enum cstr_tt otype = __cstr_type(*p);
-	head = __cstr_head(*p);
-	struct alloc_man man;
-	__cstr_getman_wp(&man, *p);
-
-	switch (mode)
-	{
-		case WRITE_APPEND:
-			pos = __cstr_relsiz(*p);
-			if (pos + n > man.nofblk - sizeof(struct head0))
-			{
-				__cstr_getman(&man, pos + n);
-				otype = man.type;
-				char* _alloc = (char*) CSTR_REALLOC(head, man.nofblk * sizeof(char));
-				if (!_alloc)
-					__cstr_debug(CSTR_DEBUG_ALLOC_FAILURE);
-				head = _alloc;
-				memcpy(_alloc + sizeof(struct head0) + pos, buf, n * sizeof(char));
-				*p = __cstr_set_header(_alloc, &man);
-				c = *p + pos + n;
-				*c = '\0';
-				pos += n;
-			}
-			else
-			{
-				memcpy(p + pos, buf, n * sizeof(char));
-				c = *p + pos + n;
-				*c = '\0';
-				pos += n;
-			}
-			break;
-
-		case WRITE_OVERWRITE:
-			pos = 0;
-			if (n > man.nofblk - sizeof(struct head0))
-			{
-				__cstr_getman(&man, n);
-				otype = man.type;
-				char* _alloc = (char*) realloc(head, man.nofblk * sizeof(char));
-				if (!_alloc)
-					__cstr_debug(CSTR_DEBUG_ALLOC_FAILURE);
-				head = _alloc;
-				memcpy(_alloc + sizeof(struct head0), buf, n *sizeof(char));
-				*p = __cstr_set_header(_alloc, &man);
-				c = *p + n;
-				*c = '\0';
-				pos += n;
-			}
-			else
-			{
-				memcpy(p, buf, n * sizeof(char));
-				c = *p + n;
-				*c = '\0';
-				pos += n;
-			}
-			break;
-			
-		default:
-			exit(EXIT_FAILURE);
-
-	}
-	if (index)
-		*index += n;
-	while((n = cread(buf, delim, CSTR_IO_BUFFER, fd)) != 0)
-	{
-		if (pos + n > man.nofblk - sizeof(struct head0))
+	cstr_t s = *p;
+	cstr_make_room(CSTR_IO_BUFFER * 2 + pos);
+	room = CSTR_IO_BUFFER * 2;
+	do {
+		_read = read(fd, buf, CSTR_IO_BUFFER);
+		if (_read > room)
 		{
-			__cstr_getman(&man, pos + n);
-			otype = man.type;
-			char* _alloc = (char*) realloc(head, man.nofblk * sizeof(char));
-			if (!_alloc)
-				__cstr_debug(CSTR_DEBUG_ALLOC_FAILURE);
-			head = _alloc;
-			memcpy(_alloc + sizeof(struct head0) + pos, buf, n * sizeof(char));
-			*p = __cstr_set_header(_alloc, &man);
-			c = *p + pos + n;
-			*c = '\0';
-			pos += n;
+			cstr_exp_grow(p);
+			s = *p;
+			room = cstr_room(s);
 		}
-		else
-		{
-			memcpy(p + pos, buf, n * sizeof(char));
-			c = *p + pos + n;
-			*c ='\0';
-			pos += n;
-		}
-		if (index)
-			*index += n;
-	}
 
-	return c;
+		cstr_write0_fast(s, buf, _read, pos);
+		pos += _read;
+		room -= _read;
+	} while(_read);
+
+	*index = pos;
+	return pos;
 }
 
 /**
- * cstr_getline - Get line from input stream
- * @p:		&cstr_t string
- * @size:	maximum size to read
- * @index:	read position
+ * cstr_read_append - Read from file descriptor and write at end
+ * @p:		string
+ * @index:	size pointer
  * @fd:		file descriptor
- * @mode:	write mode
  *
- * Exactly the same behaviour with cstr_delim() except that it will terminate if a '\n' or an EOF encountered
  */
-char* cstr_getline(cstr_t* p, size_t size, size_t* index, int fd, enum write_mode mode)
+int cstr_read_append(cstr_t *p, size_t *index, int fd)
 {
-	return cstr_delim(p, size, '\n', index, fd, mode);
+	return cstr_read_pos(p, index, __cstr_relsiz(*p), fd);
+}
+
+/**
+ * cstr_read - Read from file descriptor and write at beginning
+ * @p:		string
+ * @index:	size pointer
+ * @fd:		file descriptor
+ *
+ */
+int cstr_read(cstr_t *p, size_t *index, int fd)
+{
+	return cstr_read_pos(p, index, 0, fd);
+}
+
+/** 
+ * _read_delim - Read and classify delimiter character
+ *
+ * @src:	characters buffer
+ * @size:	size to read
+ * @delim:	delimiter character
+ *
+ * Read all of @src and find the @delim character. If found, return position of that delim characters and write at that position '\0'
+ * If not found, return 0 and continue
+ */
+inline size_t _read_delim(char *src, ssize_t size, char delim)
+{
+	for (int i = 0; i <= size; i++)
+	{
+		if (src[i] == delim)
+		{
+			src[i] = '\0';
+			return i;
+		}
+	}
+	return 0;
 }
 /**
- * cstr_fgets - Get from input stream
- * @p:		&cstr_t string
- * @size:	maximum size to read
- * @index:	write position
+ * cstr_read_delim_pos - Read from file descriptor with delim characters
+ * @p:		string
+ * @delim:	delimiter characters
+ * @index:	size pointer
+ * @pos:	write position
  * @fd:		file descriptor
- * @mode:	write mode
  *
- * Exactly the same behaviour with cstr_delim() except that it will terminate if an EOF is encountered
  */
-char* cstr_fgets(cstr_t* p, size_t size, size_t* index, int fd, enum write_mode mode)
+int cstr_read_delim_pos(cstr_t *p, char delim, size_t *index, size_t pos, int fd)
 {
-    char buf[CSTR_IO_BUFFER];
-	char* c = NULL;
-	int n = 0;
-	char* head = NULL;
-	n = cread_no_delim(buf, CSTR_IO_BUFFER, fd);
+	char buf[CSTR_IO_BUFFER];
+	ssize_t _read = 0;
+	ssize_t _write = 0;
+	size_t room = 0;
 
-	cstr_wrapper pos = 0;
-	enum cstr_tt otype = __cstr_type(*p);
-	head = __cstr_head(*p);
-	struct alloc_man man;
-	__cstr_getman_wp(&man, *p);
-
-	switch (mode)
-	{
-		case WRITE_APPEND:
-			pos = __cstr_relsiz(*p);
-			if (pos + n > man.nofblk - sizeof(struct head0))
-			{
-				__cstr_getman(&man, pos + n);
-				otype = man.type;
-				char* _alloc = (char*) CSTR_REALLOC(head, man.nofblk * sizeof(char));
-				if (!_alloc)
-					__cstr_debug(CSTR_DEBUG_ALLOC_FAILURE);
-				head = _alloc;
-				memcpy(_alloc + sizeof(struct head0) + pos, buf, n * sizeof(char));
-				*p = __cstr_set_header(_alloc, &man);
-				c = *p + pos + n;
-				*c = '\0';
-				pos += n;
-			}
-			else
-			{
-				memcpy(*p + pos, buf, n * sizeof(char));
-				c = *p + pos + n;
-				*c = '\0';
-				pos += n;
-			}
-			break;
-
-		case WRITE_OVERWRITE:
-			pos = 0;
-			if (n > man.nofblk - sizeof(struct head0))
-			{
-				__cstr_getman(&man, n);
-				otype = man.type;
-				char* _alloc = (char*) CSTR_REALLOC(head, man.nofblk * sizeof(char));
-				if (!_alloc)
-					__cstr_debug(CSTR_DEBUG_ALLOC_FAILURE);
-				head = _alloc;
-				memcpy(_alloc + sizeof(struct head0), buf, n *sizeof(char));
-				*p = __cstr_set_header(_alloc, &man);
-				c = *p + n;
-				*c = '\0';
-				pos += n;
-			}
-			else
-			{
-				memcpy(*p, buf, n * sizeof(char));
-				c = *p + n;
-				*c = '\0';
-				pos += n;
-			}
-			break;
-			
-		default:
-			exit(EXIT_FAILURE);
-
-	}
-	if (index)
-		*index += n;
-	while((n = cread_no_delim(buf, CSTR_IO_BUFFER, fd)) != 0)
-	{
-		if (pos + n >= man.nofblk - sizeof(struct head0))
+	cstr_t s = *p;
+	cstr_make_room(CSTR_IO_BUFFER * 2 + pos);
+	room = CSTR_IO_BUFFER * 2;
+	do {
+		_read = read(fd, buf, CSTR_IO_BUFFER);
+		if (_read > room)
 		{
-			__cstr_getman(&man, pos + n);
-			otype = man.type;
-			char* _alloc = (char*) CSTR_REALLOC(head, man.nofblk * sizeof(char));
-			if (!_alloc)
-				__cstr_debug(CSTR_DEBUG_ALLOC_FAILURE);
-			head = _alloc;
-			memcpy(_alloc + sizeof(struct head0) + pos, buf, n * sizeof(char));
-			*p = __cstr_set_header(_alloc, &man);
-			c = *p + pos + n;
-			*c = '\0';
-			pos += n;
+			cstr_exp_grow(p);
+			s = *p;
+			room = cstr_room(s);
 		}
-		else
+		_write = _read_delim(buf, _read, delim);
+		if (_write)
 		{
-			memcpy(*p + pos, buf, n * sizeof(char));
-			c = *p + pos + n;
-			*c ='\0';
-			pos += n;
+			cstr_write0_fast(s, buf, _write, pos);
+			pos += _write;
+			*index = pos;
+			return pos;
 		}
-		if (index)
-			*index += n;
-	}
 
-	return c;
+		cstr_write0_fast(s, buf, _read, pos);
+		pos += _read;
+		room -= _read;
+	} while(_read);
+
+	*index = pos;
+	return pos;
+
 }
 
-void cstr_puts(cstr_t p, size_t pos, int fd)
+/**
+ * cstr_read_delim_append - Append with delim character
+ * @p:		string
+ * @delim:	delim character
+ * @index:	size pointer
+ * @fd:		file descriptor
+ *
+ */
+int cstr_read_delim_append(cstr_t *p, char delim, size_t *index, int fd)
 {
-	enum cstr_tt otype = __cstr_type(p);
-	cstr_wrapper real_len = __cstr_relsiz(p);
-	cstr_wrapper to_write = real_len - pos;
-	if (to_write < 0)
-	{
-		__cstr_debug(CSTR_DEBUG_OUT_OF_INDEX);
-		return;
-	}
-	write(fd, p + pos, to_write);
+	return cstr_read_delim_pos(p, delim, index, __cstr_relsiz(*p), fd);
 }
 
-static inline cstr_wrapper __min(cstr_wrapper a, cstr_wrapper b)
+/**
+ * cstr_read_delim - Read with delim character
+ * @p:		string
+ * @delim:	delim character
+ * @index:	size pointer
+ * @fd:		file descriptor
+ *
+ */
+int cstr_read_delim(cstr_t *p, char delim, size_t *index, int fd)
 {
-	return (a < b) ? a : b;
-}
-void cstr_putsn(cstr_t p, size_t pos, size_t size, int fd)
-{
-	enum cstr_tt otype = __cstr_type(p);
-	cstr_wrapper real_len = __cstr_relsiz(p);
-	cstr_wrapper to_write = __min(size, real_len - pos);
-
-	if (to_write < 0)
-	{
-		__cstr_debug(CSTR_DEBUG_OUT_OF_INDEX);
-		return;
-	}
-	write(fd, p + pos, to_write);
+	return cstr_read_delim_pos(p, delim, index, 0, fd);
 }
 
-void cstr_dump(cstr_t p, int fd)
+/**
+ * cstr_getline - getline() implementation for cstr
+ * @p:		string
+ * @index:	size pointer
+ * @pos:	write position
+ * @fd:		file descriptor
+ *
+ */
+int cstr_getline(cstr_t *p, size_t *index, size_t pos, int fd)
 {
-	enum cstr_tt otype = __cstr_type(p);
-	void* head = __cstr_head(p);
-	cstr_wrapper to_write = (__cstr_nofbuf(p) << __cstr_mask(otype)) + sizeof(struct head0);
-	write(fd, head, to_write);
+	return cstr_read_delim_pos(p, '\n', index, pos, fd);
+}
+
+/**
+ * cstr_putsn - puts() implementation for cstr
+ * @p:		string
+ * @pos:	puts position
+ * @size:	puts size
+ * @fd:		file descriptor
+ *
+ */
+void cstr_putsn(const cstr_const_t p, size_t pos, size_t size, int fd)
+{
+	write(fd, p + pos, size);
+}
+
+/**
+ * cstr_puts - puts() implementation for cstr
+ * @p:		string
+ * @pos:	puts position
+ * @fd:		file descriptor
+ *
+ */
+void cstr_puts(const cstr_const_t p, size_t pos, int fd)
+{
+	write(fd, p + pos, __cstr_relsiz(p));
+}
+
+/**
+ * cstr_dump - Dump all data stored in string
+ * @p:		string
+ * @fd:		file descriptor
+ *
+ */
+void cstr_dump(const cstr_const_t p, int fd)
+{
+	struct head0 *pc = (struct head0*)p;
+	--pc;
+	struct head0 tmp = *pc;
+	size_t nofblk = tmp.nofbuf * __cstr_datbuf(__cstr_from_flag(tmp.flag));
+	write(fd, pc, nofblk);
 }

@@ -160,6 +160,7 @@ extern void cstr_blank(cstr_t*, size_t);		// Growing with blank spaces
 extern void cstr_grow0(cstr_t*, void*, size_t);		// Growing with copied data
 extern void cstr_grow_block(cstr_t*, size_t);		// Growing by blocks
 extern void cstr_exp_grow(cstr_t*);			// Growing exponentially
+extern void cstr_make_room(cstr_t*, size_t);		// Make room
 
 /* Extra fast growing */
 extern inline size_t cstr_room(const cstr_const_t);	// Room available for writing
@@ -203,9 +204,6 @@ extern inline cstr_lower __cstr_flag(const cstr_const_t);
 extern inline void __cstr_set_nofbuf(const cstr_const_t, cstr_lower);
 extern inline void __cstr_set_relsiz(const cstr_const_t, cstr_wrapper);
 extern inline void __cstr_set_flag(const cstr_const_t, enum cstr_tt);
-
-extern inline cstr_lower __cstr_datoff(enum cstr_tt);
-extern inline cstr_lower __cstr_datoff_wn(size_t);
 
 extern inline cstr_lower __cstr_datbuf(enum cstr_tt);
 extern inline cstr_lower __cstr_datbuf_wn(size_t);
