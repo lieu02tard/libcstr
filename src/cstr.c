@@ -35,7 +35,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
  *
  * Return type of string
  */
-__attribute__((always_inline))
+__attribute__((pure, always_inline))
 inline enum cstr_tt __cstr_type(const cstr_const_t p)
 {
 	struct head0 *pc = (struct head0*)p;
@@ -56,7 +56,7 @@ inline enum cstr_tt __cstr_type(const cstr_const_t p)
  *
  * Return the position that is allocate for string @p
  */
-__attribute__((always_inline))
+__attribute__((pure, always_inline))
 inline void* __cstr_head(const cstr_const_t p)
 {
 	return (void*)p - sizeof(struct head0);
@@ -69,7 +69,7 @@ inline void* __cstr_head(const cstr_const_t p)
  *
  * Return type of string that @n characters fit in
  */
-__attribute__((always_inline))
+__attribute__((const, always_inline))
 inline enum cstr_tt __cstr_type_wn(size_t n)
 {
 #ifdef HAVE_64_BITS
@@ -91,7 +91,7 @@ inline enum cstr_tt __cstr_type_wn(size_t n)
  *
  * Return nofbuf metadata
  */
-__attribute__((always_inline))
+__attribute__((pure, always_inline))
 inline cstr_lower __cstr_nofbuf(const cstr_const_t p)
 {
 	/* gcc should be able to optiomize away these lines */
@@ -113,7 +113,7 @@ inline cstr_lower __cstr_nofbuf(const cstr_const_t p)
  *
  * return relsiz metadata
  */
-__attribute__((always_inline))
+__attribute__((pure, always_inline))
 inline cstr_wrapper __cstr_relsiz(const cstr_const_t p)
 {
 	struct head0 *pc = (struct head0*)p;
@@ -130,7 +130,7 @@ inline cstr_wrapper __cstr_relsiz(const cstr_const_t p)
  *
  * return flag metadata
  */
-__attribute__((always_inline))
+__attribute__((pure, always_inline))
 inline cstr_lower __cstr_flag(const cstr_const_t p)
 {
 	struct head0 *pc = (struct head0*)p;
@@ -146,7 +146,7 @@ inline cstr_lower __cstr_flag(const cstr_const_t p)
  *
  * return buffer size of a certain type
  */
-__attribute__((always_inline))
+__attribute__((const, always_inline))
 inline cstr_lower __cstr_datbuf(enum cstr_tt type)
 {
 	switch (type)
@@ -196,7 +196,7 @@ inline cstr_lower __cstr_datbuf(enum cstr_tt type)
  *
  * return buffer size of certain string size
  */
-__attribute__((always_inline))
+__attribute__((const, always_inline))
 inline cstr_lower __cstr_datbuf_wn(size_t nbytes)
 {
 #ifdef HAVE_64_BITS
@@ -274,7 +274,7 @@ inline void __cstr_header(header_cnt* head, const cstr_const_t p)
  *
  * Get bit shift pattern (or logarithm base 2 of data buffer) for type
  */
-__attribute__((always_inline))
+__attribute__((const, always_inline))
 inline size_t __cstr_mask(enum cstr_tt type)
 {
 	switch (type)
@@ -433,6 +433,7 @@ inline void* __cstr_set_header_wh(void* p, header_cnt* head)
  * Convert @type to useable flag in a header
  * 
  */
+__attribute__((const, always_inline))
 inline cstr_lower __cstr_toflag(enum cstr_tt type)
 {
 	// Flag hasn't been used for anything except type
@@ -446,7 +447,7 @@ inline cstr_lower __cstr_toflag(enum cstr_tt type)
  *
  * Convert raw @flag to type
  */
-__attribute__((always_inline))
+__attribute__((const, always_inline))
 inline enum cstr_tt __cstr_from_flag(cstr_lower flag)
 {
 	return flag;
@@ -459,7 +460,7 @@ inline enum cstr_tt __cstr_from_flag(cstr_lower flag)
  *
  * Count the number of buffer to allocate for @nbytes characters
  */
-__attribute__((always_inline))
+__attribute__((const, always_inline))
 inline cstr_lower __cstr_nof_buffer(size_t nbytes, enum cstr_tt type)
 {
 	size_t n = nbytes + sizeof(struct head0);
@@ -481,23 +482,26 @@ inline cstr_lower __cstr_nof_buffer(size_t nbytes, enum cstr_tt type)
 }
 #define m_cstr_nof_buffer(nbytes, type) ((nbytes >> T0_MASK) + 1)
 
-__attribute__((always_inline))
+__attribute__((const, always_inline))
 inline cstr_lower __cstr_nof_buffer_alone(size_t nbytes)
 {
 	return __cstr_nof_buffer(nbytes, __cstr_type_wn(nbytes));
 }
 
 /* ----------- API functions ------------------ */
+__attribute__((pure))
 inline size_t cstr_buf(const cstr_const_t p)
 {
 	return __cstr_nofbuf(p);
 }
 
+__attribute__((pure))
 inline size_t cstr_len(const cstr_const_t p)
 {
 	return __cstr_relsiz(p);
 }
 
+__attribute__((pure))
 inline size_t cstr_rmn(const cstr_const_t p)
 {
 	enum cstr_tt type = __cstr_type(p);

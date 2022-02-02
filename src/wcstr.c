@@ -36,7 +36,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
  *
  * Return type of string
  */
-__attribute__((always_inline))
+__attribute__((pure, always_inline))
 inline enum wcstr_tt __wcstr_type(const wcstr_const_t p)
 {
 	struct head0 *pc = (struct head0*)p;
@@ -54,7 +54,7 @@ inline enum wcstr_tt __wcstr_type(const wcstr_const_t p)
  *
  * Return the position that is allocate for string @p
  */
-__attribute__((always_inline))
+__attribute__((pure, always_inline))
 inline void* __wcstr_head(const wcstr_const_t p)
 {
 	return (void*)p - sizeof(struct head0);
@@ -66,7 +66,7 @@ inline void* __wcstr_head(const wcstr_const_t p)
  *
  * Return type of string that @n characters fit in
  */
-__attribute__((always_inline))
+__attribute__((const, always_inline))
 inline enum wcstr_tt __wcstr_type_wn(size_t n)
 {
 #ifdef HAVE_64_BITS
@@ -87,7 +87,7 @@ inline enum wcstr_tt __wcstr_type_wn(size_t n)
  *
  * Return nofbuf metadata
  */
-__attribute__((always_inline))
+__attribute__((pure, always_inline))
 inline wcstr_lower __wcstr_nofbuf(const wcstr_const_t p)
 {
 	struct head0 *pc = (struct head0*)p;
@@ -105,6 +105,7 @@ inline wcstr_lower __wcstr_nofbuf(const wcstr_const_t p)
  *
  * return relsiz metadata
  */
+__attribute__((const, always_inline))
 inline wcstr_wrapper __wcstr_relsiz(const wcstr_const_t p)
 {
 	struct head0 *pc = (struct head0*)p;
@@ -119,6 +120,7 @@ inline wcstr_wrapper __wcstr_relsiz(const wcstr_const_t p)
  *
  * return flag metadata
  */
+__attribute__((const, always_inline))
 inline wcstr_lower __wcstr_flag(const wcstr_const_t p)
 {
 	struct head0 *pc = (struct head0*)p;
@@ -133,6 +135,7 @@ inline wcstr_lower __wcstr_flag(const wcstr_const_t p)
  *
  * return buffer size of a certain type
  */
+__attribute__((const, always_inline))
 inline wcstr_lower __wcstr_datbuf(enum wcstr_tt type)
 {
 	switch (type)
@@ -170,6 +173,7 @@ inline wcstr_lower __wcstr_datbuf(enum wcstr_tt type)
  *
  * return buffer size of certain string size
  */
+__attribute__((const, always_inline))
 inline wcstr_lower __wcstr_datbuf_wn(size_t nbytes)
 {
 #ifdef HAVE_64_BITS
@@ -241,7 +245,7 @@ inline void __wcstr_header(header_cnt* head, const wcstr_const_t p)
  *
  * Get bit shift pattern
  */
-__attribute__((always_inline))
+__attribute__((const, always_inline))
 inline size_t __wcstr_mask(enum wcstr_tt type)
 {
 	switch (type)
@@ -376,6 +380,7 @@ inline void* __wcstr_set_header_wh(void* p, header_cnt* head)
  *
  * Convert @type to useable flag in a header
  */
+__attribute__((const, always_inline))
 inline wcstr_lower __wcstr_toflag(enum wcstr_tt type)
 {
 	return type;
@@ -387,6 +392,7 @@ inline wcstr_lower __wcstr_toflag(enum wcstr_tt type)
  *
  * Convert raw @flag to type
  */
+__attribute__((const, always_inline))
 inline enum wcstr_tt __wcstr_from_flag(wcstr_lower flag)
 {
 	return flag;
@@ -399,6 +405,7 @@ inline enum wcstr_tt __wcstr_from_flag(wcstr_lower flag)
  *
  * Count the number of buffer to allocate for @nbytes characters
  */
+__attribute__((const, always_inline))
 inline wcstr_lower __wcstr_nof_buffer(size_t nbytes, enum wcstr_tt type)
 {
 	switch (type)
@@ -418,6 +425,7 @@ inline wcstr_lower __wcstr_nof_buffer(size_t nbytes, enum wcstr_tt type)
 	}
 }
 
+__attribute__((const, always_inline))
 inline wcstr_lower __wcstr_nof_buffer_alone(size_t nbytes)
 {
 	return __wcstr_nof_buffer(nbytes, __wcstr_type_wn(nbytes));
