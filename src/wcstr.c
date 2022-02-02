@@ -181,6 +181,7 @@ inline wcstr_lower __wcstr_datbuf_wn(size_t nbytes)
 	return (nbytes <= T0_MAX) ? T0_BUFFER :
 		(nbytes <= T1_MAX) ? T1_BUFFER :
 		(nbytes <= T2_MAX) ? T2_BUFFER : 0;
+#endif
 }
 
 /**
@@ -256,7 +257,7 @@ inline size_t __wcstr_mask(enum wcstr_tt type)
 			return T3_MASK;
 #endif
 		default:
-			__wcstr_debug(CSTR_DEBUG_INVALID_STRING_TYPE);
+			__cstr_debug(CSTR_DEBUG_INVALID_STRING_TYPE);
 	}
 }
 
@@ -413,7 +414,7 @@ inline wcstr_lower __wcstr_nof_buffer(size_t nbytes, enum wcstr_tt type)
 			return (nbytes >> T3_MASK) + 1;
 #endif
 		default:
-			__wcstr_debug(CSTR_DEBUG_INVALID_STRING_TYPE);
+			__cstr_debug(CSTR_DEBUG_INVALID_STRING_TYPE);
 	}
 }
 
@@ -499,7 +500,7 @@ __attribute__((warn_unused_result))
 wcstr_t nwcstrcpy(wcstr_t p)
 {
 	struct alloc_man man;
-	__wcstr_getman_wp(&man, p, __wcstr_type(p));
+	__wcstr_getman_wp(&man, p);
 	wcstr_t _alloc = (wcstr_t) CSTR_MALLOC(man.nofblk * sizeof(WCHAR_TYPE));
 	if (_alloc)
 	{

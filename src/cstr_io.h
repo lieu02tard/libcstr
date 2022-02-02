@@ -46,4 +46,5 @@ extern int cstr_getline(cstr_t* ,size_t *index, size_t pos, int fd);
 extern void cstr_puts(const cstr_const_t, size_t pos, int fd);
 extern void cstr_putsn(const cstr_const_t, size_t pos, size_t size, int fd);
 extern void cstr_dump(const cstr_const_t, int fd);
+
 #endif

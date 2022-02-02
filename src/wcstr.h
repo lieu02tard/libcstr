@@ -103,7 +103,7 @@ struct alloc_man {
 	wcstr_wrapper	nofblk;
 	wcstr_lower	nofbuf;
 	wcstr_lower	datbuf;
-	enum cstr_tt 	type;
+	enum wcstr_tt 	type;
 };
 
 #ifndef __get_write_enum

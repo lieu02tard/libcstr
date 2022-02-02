@@ -29,7 +29,7 @@ int  cstr_read_pos(cstr_t *p, size_t *index, size_t pos, int fd)
 	size_t room = 0;
 
 	cstr_t s = *p;
-	cstr_make_room(CSTR_IO_BUFFER * 2 + pos);
+	cstr_make_room(p, CSTR_IO_BUFFER * 2 + pos);
 	room = CSTR_IO_BUFFER * 2;
 	do {
 		_read = read(fd, buf, CSTR_IO_BUFFER);
@@ -83,7 +83,7 @@ int cstr_read(cstr_t *p, size_t *index, int fd)
  * Read all of @src and find the @delim character. If found, return position of that delim characters and write at that position '\0'
  * If not found, return 0 and continue
  */
-inline size_t _read_delim(char *src, ssize_t size, char delim)
+extern inline size_t _read_delim(char *src, ssize_t size, char delim)
 {
 	for (int i = 0; i <= size; i++)
 	{
@@ -112,7 +112,7 @@ int cstr_read_delim_pos(cstr_t *p, char delim, size_t *index, size_t pos, int fd
 	size_t room = 0;
 
 	cstr_t s = *p;
-	cstr_make_room(CSTR_IO_BUFFER * 2 + pos);
+	cstr_make_room(p, CSTR_IO_BUFFER * 2 + pos);
 	room = CSTR_IO_BUFFER * 2;
 	do {
 		_read = read(fd, buf, CSTR_IO_BUFFER);

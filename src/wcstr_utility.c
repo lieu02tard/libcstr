@@ -86,7 +86,7 @@ WCHAR_TYPE* wcstrcat(wcstr_t *dest, const wcstr_const_t src)
 		return *dest;
 	}
 
-	wcstr_wrapper src_len = __wcstr_relsiz(src, __wcstr_type(src));
+	wcstr_wrapper src_len = __wcstr_relsiz(src);
 	if (!src_len)
 		return *dest;
 
