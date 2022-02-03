@@ -787,7 +787,7 @@ inline void cstr_blank_fast(cstr_t p, size_t size)
  */
 void cstr_blank(cstr_t *p, size_t size)
 {
-	struct head0* pc = (struct head0*)p;
+	struct head0* pc = (struct head0*)(*p);
 	--pc;
 	struct alloc_man man;
 	__cstr_getman_app_wh(&man, pc, size);
@@ -818,7 +818,7 @@ void cstr_blank(cstr_t *p, size_t size)
  */
 void cstr_grow0(cstr_t *p, void* src, size_t size)
 {
-	struct head0 *pc = (struct head0*)p;
+	struct head0 *pc = (struct head0*)(*p);
 	--pc;
 	struct alloc_man man;
 	__cstr_getman_app_wh(&man, pc, size);
