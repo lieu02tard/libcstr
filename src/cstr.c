@@ -151,18 +151,13 @@ inline cstr_lower __cstr_datbuf(enum cstr_tt type)
 {
 	switch (type)
 	{
-		case CSTR_TYPE_0:
-			return T0_BUFFER;
-		case CSTR_TYPE_1:
-			return T1_BUFFER;
-		case CSTR_TYPE_2:
-			return T2_BUFFER;
+		case CSTR_TYPE_0: return T0_BUFFER;
+		case CSTR_TYPE_1: return T1_BUFFER;
+		case CSTR_TYPE_2: return T2_BUFFER;
 #ifdef HAVE_64_BITS
-		case CSTR_TYPE_3:
-			return T3_BUFFER;
+		case CSTR_TYPE_3: return T3_BUFFER;
 #endif
-		default:
-			__cstr_debug(CSTR_DEBUG_INVALID_STRING_TYPE);
+		default: __cstr_debug(CSTR_DEBUG_INVALID_STRING_TYPE);
 	}
 #if 0
 	/* Lookup table implementation */
@@ -279,18 +274,13 @@ inline size_t __cstr_mask(enum cstr_tt type)
 {
 	switch (type)
 	{
-		case CSTR_TYPE_0:
-			return T0_BUFFER_MASK;
-		case CSTR_TYPE_1:
-			return T1_BUFFER_MASK;
-		case CSTR_TYPE_2:
-			return T2_BUFFER_MASK;
+		case CSTR_TYPE_0: return T0_BUFFER_MASK;
+		case CSTR_TYPE_1: return T1_BUFFER_MASK;
+		case CSTR_TYPE_2: return T2_BUFFER_MASK;
 #ifdef HAVE_64_BITS
-		case CSTR_TYPE_3:
-			return T3_BUFFER_MASK;
+		case CSTR_TYPE_3: return T3_BUFFER_MASK;
 #endif
-		default:
-			__cstr_debug(CSTR_DEBUG_INVALID_STRING_TYPE);
+		default: __cstr_debug(CSTR_DEBUG_INVALID_STRING_TYPE);
 	}
 }
 
@@ -466,18 +456,13 @@ inline cstr_lower __cstr_nof_buffer(size_t nbytes, enum cstr_tt type)
 	size_t n = nbytes + sizeof(struct head0);
 	switch (type)
 	{
-		case CSTR_TYPE_0:
-			return (n >> T0_BUFFER_MASK) + 1;
-		case CSTR_TYPE_1:
-			return (n >> T1_BUFFER_MASK) + 1;
-		case CSTR_TYPE_2:
-			return (n >> T2_BUFFER_MASK) + 1;
+		case CSTR_TYPE_0: return (n >> T0_BUFFER_MASK) + 1;
+		case CSTR_TYPE_1: return (n >> T1_BUFFER_MASK) + 1;
+		case CSTR_TYPE_2: return (n >> T2_BUFFER_MASK) + 1;
 #ifdef HAVE_64_BITS
-		case CSTR_TYPE_3:
-			return (n >> T3_BUFFER_MASK) + 1;
+		case CSTR_TYPE_3: return (n >> T3_BUFFER_MASK) + 1;
 #endif
-		default:
-			__cstr_debug(CSTR_DEBUG_INVALID_STRING_TYPE);
+		default: __cstr_debug(CSTR_DEBUG_INVALID_STRING_TYPE);
 	}
 }
 #define m_cstr_nof_buffer(nbytes, type) ((nbytes >> T0_MASK) + 1)
