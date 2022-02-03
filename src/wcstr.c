@@ -205,7 +205,7 @@ inline void __wcstr_set_nofbuf(const wcstr_const_t p, wcstr_lower val)
 	struct head0 *pc = (struct head0*)p; \
 	--pc; pc->member = val; } while(0)
 
-#define m_wcstr_nofbuf(p, val) m_wcstr_setmeta(p, val, nofbuf)
+#define m_wcstr_set_nofbuf(p, val) m_wcstr_setmeta(p, val, nofbuf)
 
 /**
  * __wcstr_set_relsiz - set relsiz metadata
@@ -320,7 +320,7 @@ inline void __wcstr_getman_wp(struct alloc_man* man, const wcstr_const_t p)
  *
  * get allocation manual for a header
  */
-inline void __wcstr_getman_wh(struct alloc_man* man, header_cnt *head, enum wcstr_tt type)
+inline void __wcstr_getman_wh(struct alloc_man* man, header_cnt *head)
 {
 	man->relsiz = head->relsiz;
 	man->nofbuf = head->nofbuf;

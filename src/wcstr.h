@@ -170,7 +170,7 @@ extern inline size_t __wcstr_mask(enum wcstr_tt);
 
 extern inline void __wcstr_getman(struct alloc_man*, size_t);
 extern inline void __wcstr_getman_wp(struct alloc_man*, const wcstr_const_t);
-extern inline void__wcstr_getman_wh(struct alloc_man*, header_cnt*);
+extern inline void __wcstr_getman_wh(struct alloc_man*, header_cnt*);
 extern inline void* __wcstr_set_header(void*, struct alloc_man*);
 extern inline void* __wcstr_set_header_wh(void*, header_cnt*);
 

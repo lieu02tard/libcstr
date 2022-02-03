@@ -25,7 +25,7 @@
 int  cstr_read_pos(cstr_t *p, size_t *index, size_t pos, int fd)
 {
 	char buf[CSTR_IO_BUFFER];
-	ssize_t _read = 0;
+	size_t _read = 0;
 	size_t room = 0;
 
 	cstr_t s = *p;
